@@ -1,0 +1,25 @@
+{
+	"include": [
+		"./main.ts"
+	],
+	"exclude": [
+		"../node_modules"
+	],
+	"compilerOptions": {
+		"target": "ES2018",
+		"module": "commonjs",
+		"lib": ["es6", "dom"],
+		"allowJs": true,
+		"outDir": "../server_dist",
+		"removeComments": true,
+		"strict": true,
+		"noImplicitAny": true,
+		"strictFunctionTypes": true,
+		"strictPropertyInitialization": true,
+		"alwaysStrict": true,
+		"noUnusedLocals": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"resolveJsonModule": true
+	}
+}

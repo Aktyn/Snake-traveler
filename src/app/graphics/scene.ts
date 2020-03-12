@@ -1,66 +1,72 @@
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 
-const blockMesh = require('../../assets/meshes/block.obj');
-console.log(blockMesh);
+import Vec2 from '../common/math/vec2';
+
+const crateTexture = require('../../assets/textures/blockCrate.jpg');
+const blockCrateLM = require('../../assets/textures/rustLight.jpg'); //blockCrateLM.jpg
+const nmTexture = require('../../assets/textures/rocksNM.jpg');
 
 class Scene {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.Camera;
 
-  private static loader = new OBJLoader();
-
   constructor() {
     this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
     this.camera.position.z = 10;
     this.scene = new THREE.Scene();
+
+    const texture = new THREE.TextureLoader().load(crateTexture);
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+
+    const texture2 = new THREE.TextureLoader().load(blockCrateLM);
+    texture2.wrapS = THREE.ClampToEdgeWrapping;
+    texture2.wrapT = THREE.ClampToEdgeWrapping;
+
+    const texture3 = new THREE.TextureLoader().load(nmTexture);
+    texture2.wrapS = THREE.ClampToEdgeWrapping;
+    texture2.wrapT = THREE.ClampToEdgeWrapping;
+
     //const geometry = new THREE.BoxGeometry(1, 1, 1);
-    //const material = new THREE.MeshNormalMaterial();
+    // const material = new THREE.MeshNormalMaterial();
+    const material = new THREE.MeshPhongMaterial({
+      color: new THREE.Color('#aaa'),
+      //map: texture,
+      specularMap: texture2,
+      specular: new THREE.Color('#fff'),
+      //normalMap: texture3,
+      //normalScale: new THREE.Vector2(0.75, 0.75),
+      transparent: false
+    });
+    // material.emissive.setRGB(0.5, 1, 1);
     //const mesh = new THREE.Mesh(geometry, material);
     //this.scene.add(mesh);
-    Scene.loader.load(
-      blockMesh,
-      group => {
-        group.children.forEach(_obj => {
-          //@ts-ignore
-          // obj.material = material;
 
-          for (let x = -10; x <= 10; x++) {
-            for (let y = -10; y <= 10; y++) {
-              const obj = _obj.clone();
-              obj.receiveShadow = true;
-              obj.castShadow = true;
-              obj.position.set(x, y, (Math.sqrt(x ** 2 + y ** 2) / 3) | 0);
-              this.scene.add(obj);
-            }
-          }
-        });
-      },
-      progress => console.log(progress)
-    );
     // this.scene.add(block);
 
-    const light = new THREE.PointLight(0xffffff, 1, 50);
-    light.castShadow = true;
-    light.position.set(8, 0, 4);
-    light.shadow.mapSize.width = 256; // default
-    light.shadow.mapSize.height = 256; // default
-    light.shadow.camera.near = 0.5; // default
-    light.shadow.camera.far = 20; // default
-    this.scene.add(light);
+    // const light = new THREE.PointLight(0xffffff, 1, 100);
+    // light.castShadow = true;
+    // light.position.set(4, 4, 8);
+    // light.shadow.mapSize.width = 256; // default
+    // light.shadow.mapSize.height = 256; // default
+    // light.shadow.camera.near = 0.5; // default
+    // light.shadow.camera.far = 40; // default
+    // this.scene.add(light);
 
-    const light2 = new THREE.PointLight(0xff5555, 1, 50);
-    light2.castShadow = true;
-    light2.position.set(-4, 0, 3);
-    light2.shadow.mapSize.width = 256; // default
-    light2.shadow.mapSize.height = 256; // default
-    light2.shadow.camera.near = 0.5; // default
-    light2.shadow.camera.far = 20; // default
-    this.scene.add(light2);
+    // const light2 = new THREE.PointLight(0xff5555, 1, 100);
+    // light2.castShadow = true;
+    // light2.position.set(-4, 0, 3);
+    // light2.shadow.mapSize.width = 256; // default
+    // light2.shadow.mapSize.height = 256; // default
+    // light2.shadow.camera.near = 0.5; // default
+    // light2.shadow.camera.far = 40; // default
+    // this.scene.add(light2);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    // this.renderer.setClearColor(new THREE.Color('#009688'));
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('webgl2', { alpha: false, antialias: true }) as WebGLRenderingContext;
+    this.renderer = new THREE.WebGLRenderer({ canvas, context });
+    this.renderer.setClearColor(new THREE.Color('#009688'));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.resize();
@@ -83,16 +89,44 @@ class Scene {
     });
   }
 
+  public setCameraPos(pos: Vec2) {
+    this.camera.position.set(pos.x, pos.y, this.camera.position.z);
+  }
+
+  public addObject(object: THREE.Object3D) {
+    this.scene.add(object);
+  }
+
+  public removeObject(object: THREE.Object3D) {
+    this.scene.remove(object);
+  }
+
+  public addLight(x: number, y: number, z: number, color: number) {
+    const light = new THREE.PointLight(color, 1, 100);
+    light.castShadow = true;
+    light.position.set(x, y, z);
+    light.shadow.mapSize.width = 256; // default
+    light.shadow.mapSize.height = 256; // default
+    light.shadow.camera.near = 0.5; // default
+    light.shadow.camera.far = 40; // default
+    this.scene.add(light);
+    return light;
+  }
+
+  public removeLight(light: THREE.PointLight) {
+    this.scene.remove(light);
+  }
+
   initDisplay(targetElement: HTMLElement) {
     targetElement.appendChild(this.renderer.domElement);
   }
 
   render() {
-    /*this.scene.children.forEach(child => {
-      //TEMP
-      child.rotation.x += 0.01;
-      child.rotation.y += 0.02;
-    });*/
+    // this.scene.children.forEach((child, index) => {
+    //   //TEMP
+    //   child.rotation.x += 0.01 * (1 + (index % 3));
+    //   child.rotation.y += 0.005 * (1 + (index % 3));
+    // });
 
     this.renderer.render(this.scene, this.camera);
   }

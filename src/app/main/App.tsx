@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import Renderer from '../graphics/Renderer';
 import GUI from '../gui/GUI';
 import core from '../game/core';
+import { onAssetsLoaded } from '../graphics/assets';
 
 function isWebGL2Available() {
   try {
@@ -14,12 +15,21 @@ function isWebGL2Available() {
 }
 
 function App() {
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+
   useEffect(() => {
-    core.init();
+    onAssetsLoaded(() => {
+      core.init();
+      setAssetsLoaded(true);
+    });
   }, []);
 
   if (!isWebGL2Available()) {
     return <div>WebGL is not available</div>;
+  }
+
+  if (!assetsLoaded) {
+    return <div>LOADING</div>; //TODO: full-page loading spinner
   }
 
   return (

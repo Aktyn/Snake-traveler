@@ -1,13 +1,11 @@
 import scene from '../graphics/scene';
+import WorldMap from './worldMap';
 
 class Core {
   private animId = 0;
+  private map: WorldMap | null = null;
 
-  constructor() {
-    console.log('Core');
-  }
-
-  init() {
+  private startUpdateLoop() {
     const animId = ++this.animId;
 
     let lastTime = 0;
@@ -21,12 +19,16 @@ class Core {
       requestAnimationFrame(tick);
       delta = time - lastTime;
       lastTime = time;
-      //console.log(delta);
 
       scene.render();
     };
 
     tick(0);
+  }
+
+  init() {
+    this.map = new WorldMap((Math.random() * (1 << 30)) | 0, (Math.random() * (1 << 30)) | 0);
+    this.startUpdateLoop();
   }
 }
 
