@@ -10,8 +10,8 @@ interface ChunkI {
 }
 
 const API = {
-  fetchChunk: (x: number, y: number): Promise<ChunkI> => {
-    return fetch(`${BASE_URL}/chunk/${x}/${y}`, {
+  fetchChunk: (x: number, y: number, size: number): Promise<ChunkI> => {
+    return fetch(`${BASE_URL}/chunk/${x}/${y}/${size}`, {
       method: 'GET',
       mode: 'cors'
     }).then(res => res.json());

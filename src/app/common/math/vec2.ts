@@ -7,16 +7,45 @@ export default class Vec2 {
     this._y = y || 0;
   }
 
-  public get x() {
+  clone() {
+    return new Vec2(this._x, this._y);
+  }
+
+  get x() {
     return this._x;
   }
 
-  public get y() {
+  get y() {
     return this._y;
   }
 
-  public set(x: number, y: number) {
+  set x(x: number) {
+    this._x = x;
+  }
+
+  set y(y: number) {
+    this._y = y;
+  }
+
+  set(x: number, y: number) {
     this._x = x;
     this._y = y;
+    return this;
+  }
+
+  add(x: number, y: number) {
+    this.set(this._x + x, this._y + y);
+    return this;
+  }
+
+  sub(x: number, y: number) {
+    this.set(this._x - x, this._y - y);
+    return this;
+  }
+
+  //static methods
+
+  static subtract(v1: Vec2, v2: Vec2) {
+    return v1.clone().sub(v2.x, v2.y);
   }
 }

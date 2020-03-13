@@ -4,6 +4,7 @@ import Renderer from '../graphics/Renderer';
 import GUI from '../gui/GUI';
 import core from '../game/core';
 import { onAssetsLoaded } from '../graphics/assets';
+import DebugInfo from './DebugInfo';
 
 function isWebGL2Available() {
   try {
@@ -16,12 +17,15 @@ function isWebGL2Available() {
 
 function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [debugText, setDebugText] = useState('');
 
   useEffect(() => {
     onAssetsLoaded(() => {
       core.init();
+      core.registerDebugger(setDebugText);
       setAssetsLoaded(true);
     });
+    return () => console.log('App closed');
   }, []);
 
   if (!isWebGL2Available()) {
@@ -36,6 +40,7 @@ function App() {
     <div className="layout">
       <Renderer />
       <GUI />
+      <DebugInfo content={debugText} />
     </div>
   );
 }

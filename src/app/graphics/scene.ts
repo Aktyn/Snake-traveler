@@ -12,8 +12,8 @@ class Scene {
   private camera: THREE.Camera;
 
   constructor() {
-    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-    this.camera.position.z = 10;
+    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 50);
+    // this.camera.position.z = 10;
     this.scene = new THREE.Scene();
 
     const texture = new THREE.TextureLoader().load(crateTexture);
@@ -45,6 +45,10 @@ class Scene {
 
     // this.scene.add(block);
 
+    const light = new THREE.AmbientLight(0x050a0f);
+    // const light = new THREE.AmbientLight(0x404040);
+    this.scene.add(light);
+
     // const light = new THREE.PointLight(0xffffff, 1, 100);
     // light.castShadow = true;
     // light.position.set(4, 4, 8);
@@ -66,7 +70,7 @@ class Scene {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('webgl2', { alpha: false, antialias: true }) as WebGLRenderingContext;
     this.renderer = new THREE.WebGLRenderer({ canvas, context });
-    this.renderer.setClearColor(new THREE.Color('#009688'));
+    // this.renderer.setClearColor(new THREE.Color('#009688'));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.resize();
@@ -89,19 +93,19 @@ class Scene {
     });
   }
 
-  public setCameraPos(pos: Vec2) {
-    this.camera.position.set(pos.x, pos.y, this.camera.position.z);
+  setCameraPos(pos: Vec2, height = this.camera.position.z) {
+    this.camera.position.set(pos.x, pos.y, height);
   }
 
-  public addObject(object: THREE.Object3D) {
+  addObject(object: THREE.Object3D) {
     this.scene.add(object);
   }
 
-  public removeObject(object: THREE.Object3D) {
+  removeObject(object: THREE.Object3D) {
     this.scene.remove(object);
   }
 
-  public addLight(x: number, y: number, z: number, color: number) {
+  addLight(x: number, y: number, z: number, color: number) {
     const light = new THREE.PointLight(color, 1, 100);
     light.castShadow = true;
     light.position.set(x, y, z);
@@ -113,7 +117,7 @@ class Scene {
     return light;
   }
 
-  public removeLight(light: THREE.PointLight) {
+  removeLight(light: THREE.PointLight) {
     this.scene.remove(light);
   }
 

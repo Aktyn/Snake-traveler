@@ -20,6 +20,8 @@ export default class ObjectBase extends Vec2 {
   }
 
   destroy() {
-    if (this.renderingObject) scene.removeObject(this.renderingObject);
+    if (this.renderingObject) {
+      scene.removeObject(this.renderingObject);
+    }
   }
 }
