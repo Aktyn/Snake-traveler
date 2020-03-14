@@ -91,7 +91,8 @@ class Core {
   }
 
   init() {
-    this.map = new WorldMap((Math.random() * (1 << 30)) | 0, (Math.random() * (1 << 30)) | 0);
+    // this.map = new WorldMap((Math.random() * (1 << 30)) | 0, (Math.random() * (1 << 30)) | 0);
+    this.map = new WorldMap(0, 0);
     this.startUpdateLoop();
     this.initControls();
   }

@@ -1,3 +1,4 @@
 node_modules/
 build/
 server_dist/
+data.sqlite3

@@ -3,14 +3,14 @@ import scene from '../graphics/scene';
 import { Updatable } from './updatable';
 
 const MIN_CAMERA_HEIGHT = 4;
-const MAX_CAMERA_HEIGHT = 32; //16
+const MAX_CAMERA_HEIGHT = 16; //set 32 for testing
 const DIFF_TOLERANCE = 0.001;
 const CAMERA_SPEED = 10;
 const POSITION_SPEED = 10;
 
 export default class Camera extends Vec2 implements Updatable {
   private cameraHeight = 10;
-  private targetCameraHeight = 32; //10
+  private targetCameraHeight = 10; //set 32 for testing
   private visiblePos = new Vec2(); //for smoothness
 
   constructor() {
@@ -39,7 +39,6 @@ export default class Camera extends Vec2 implements Updatable {
 
   zoom(factor: number) {
     this.targetCameraHeight = Math.max(MIN_CAMERA_HEIGHT, Math.min(MAX_CAMERA_HEIGHT, this.cameraHeight + factor));
-    // console.log(this.targetCameraHeight);
   }
 
   update(delta: number) {

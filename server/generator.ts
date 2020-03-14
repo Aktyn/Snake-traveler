@@ -8,8 +8,12 @@ const MAX_HEIGHT_DOWN = -4;
 const Generator = {
   /** x and y should be integers */
   generateChunk: (_x: number, _y: number, chunkSize: number) => {
-    const chunkX = _x - (_x % chunkSize);
-    const chunkY = _y - (_y % chunkSize);
+    if (_x % chunkSize || _y % chunkSize) {
+      throw new Error('Incorrect chunk coordinates');
+    }
+
+    const chunkX = _x;
+    const chunkY = _y;
 
     const blocks = [];
 
@@ -26,7 +30,7 @@ const Generator = {
           x,
           y,
           z,
-          type: 0
+          type: z > 0 ? 0 : 1
         });
       }
     }

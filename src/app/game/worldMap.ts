@@ -13,7 +13,6 @@ export default class WorldMap implements Updatable {
   private startPos: Vec2;
 
   private cam: Camera;
-  //private lastCameraChunkPos: Vec2;
   private chunks: Chunk[] = [];
   private lightSources: LightSource[] = [];
 
@@ -31,7 +30,6 @@ export default class WorldMap implements Updatable {
 
     this.cam = new Camera();
     this.cam.setPos(this.startPos.x, this.startPos.y, false);
-    //this.lastCameraChunkPos = Chunk.clampPos(this.cam);
 
     this.lightSources.push(new LightSource(this.startPos.x, this.startPos.y, 4, 0xffffff));
 
@@ -85,7 +83,6 @@ export default class WorldMap implements Updatable {
     const chunk = new Chunk(x, y);
     this.chunks.push(chunk);
     const chunkData = await API.fetchChunk(x, y, Chunk.DEFAULT_SIZE);
-    //chunk.set(chunkData.x, chunkData.y);
 
     chunkData.blocks.forEach(block => {
       chunk.objects.push(new Block(chunkData.x + block.x, chunkData.y + block.y, block.z, block.type));

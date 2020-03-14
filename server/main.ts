@@ -1,6 +1,7 @@
 import * as express from 'express';
 import * as cors from 'cors';
 import Generator from './generator';
+import './database';
 
 const port = 4000;
 

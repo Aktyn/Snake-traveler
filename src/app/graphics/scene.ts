@@ -2,10 +2,6 @@ import * as THREE from 'three';
 
 import Vec2 from '../common/math/vec2';
 
-const crateTexture = require('../../assets/textures/blockCrate.jpg');
-const blockCrateLM = require('../../assets/textures/rustLight.jpg'); //blockCrateLM.jpg
-const nmTexture = require('../../assets/textures/rocksNM.jpg');
-
 class Scene {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
@@ -16,37 +12,29 @@ class Scene {
     // this.camera.position.z = 10;
     this.scene = new THREE.Scene();
 
-    const texture = new THREE.TextureLoader().load(crateTexture);
-    texture.wrapS = THREE.ClampToEdgeWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
+    // const texture = new THREE.TextureLoader().load(crateTexture);
+    // texture.wrapS = THREE.ClampToEdgeWrapping;
+    // texture.wrapT = THREE.ClampToEdgeWrapping;
 
-    const texture2 = new THREE.TextureLoader().load(blockCrateLM);
-    texture2.wrapS = THREE.ClampToEdgeWrapping;
-    texture2.wrapT = THREE.ClampToEdgeWrapping;
+    // const texture2 = new THREE.TextureLoader().load(blockCrateLM);
+    // texture2.wrapS = THREE.ClampToEdgeWrapping;
+    // texture2.wrapT = THREE.ClampToEdgeWrapping;
 
-    const texture3 = new THREE.TextureLoader().load(nmTexture);
-    texture2.wrapS = THREE.ClampToEdgeWrapping;
-    texture2.wrapT = THREE.ClampToEdgeWrapping;
+    // const texture3 = new THREE.TextureLoader().load(nmTexture);
+    // texture2.wrapS = THREE.ClampToEdgeWrapping;
+    // texture2.wrapT = THREE.ClampToEdgeWrapping;
 
     //const geometry = new THREE.BoxGeometry(1, 1, 1);
     // const material = new THREE.MeshNormalMaterial();
-    const material = new THREE.MeshPhongMaterial({
-      color: new THREE.Color('#aaa'),
-      //map: texture,
-      specularMap: texture2,
-      specular: new THREE.Color('#fff'),
-      //normalMap: texture3,
-      //normalScale: new THREE.Vector2(0.75, 0.75),
-      transparent: false
-    });
+
     // material.emissive.setRGB(0.5, 1, 1);
     //const mesh = new THREE.Mesh(geometry, material);
     //this.scene.add(mesh);
 
     // this.scene.add(block);
 
-    const light = new THREE.AmbientLight(0x050a0f);
-    // const light = new THREE.AmbientLight(0x404040);
+    //const light = new THREE.AmbientLight(0x050a0f);
+    const light = new THREE.AmbientLight(0x202020);
     this.scene.add(light);
 
     // const light = new THREE.PointLight(0xffffff, 1, 100);
