@@ -1,13 +1,6 @@
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { Object3D, TextureLoader, ClampToEdgeWrapping } from 'three';
 
-import blockCrate from '../../assets/textures/blockCrate.jpg';
-import blockCrateLM from '../../assets/textures/blockCrateLM.jpg';
-import blockCrateNM from '../../assets/textures/blockCrateNM.jpg';
-
-import blockGrass from '../../assets/textures/blockGrass.jpg';
-import blockGrassLM from '../../assets/textures/blockGrassLight.jpg';
-
 const loader = new OBJLoader();
 
 let loaded = false;
@@ -28,11 +21,14 @@ const Assets = {
     }
   },
   textures: {
-    crate: prepareTexture(blockCrate),
-    crateLM: prepareTexture(blockCrateLM),
-    crateNM: prepareTexture(blockCrateNM),
-    grass: prepareTexture(blockGrass),
-    grassLM: prepareTexture(blockGrassLM)
+    crate: prepareTexture(require('../../assets/textures/blockCrate.jpg')),
+    crateLM: prepareTexture(require('../../assets/textures/blockCrateLM.jpg')),
+    crateNM: prepareTexture(require('../../assets/textures/blockCrateNM.jpg')),
+    grass: prepareTexture(require('../../assets/textures/blockGrass.jpg')),
+    grassLM: prepareTexture(require('../../assets/textures/blockGrassLight.jpg')),
+    lava: prepareTexture(require('../../assets/textures/blockLava.jpg')),
+    lavaLM: prepareTexture(require('../../assets/textures/blockLavaLM.jpg')),
+    rockNM: prepareTexture(require('../../assets/textures/rocksNM.jpg'))
   }
 };
 
