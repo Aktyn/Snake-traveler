@@ -85,6 +85,10 @@ class Scene {
     this.camera.position.set(pos.x, pos.y, height);
   }
 
+  setCameraRot(x: number, y: number, z: number) {
+    this.camera.rotation.set(x, y, z);
+  }
+
   addObject(object: THREE.Object3D) {
     this.scene.add(object);
   }

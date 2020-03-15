@@ -31,4 +31,12 @@ export default class ObjectBase extends Vec3 {
     this.renderingObject?.position.set(x, y, z);
     return super.set(x, y, z);
   }
+
+  setRotZ(value: number) {
+    this.setRot(this.renderingObject?.rotation.x || 0, this.renderingObject?.rotation.y || 0, value);
+  }
+
+  setRot(x: number, y: number, z: number) {
+    this.renderingObject?.rotation.set(x, y, z);
+  }
 }

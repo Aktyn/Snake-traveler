@@ -18,6 +18,10 @@ const Assets = {
     block1: {
       mesh: null as Object3D | null,
       path: require('../../assets/meshes/block_solid.obj')
+    },
+    snakeSegment: {
+      mesh: null as Object3D | null,
+      path: require('../../assets/meshes/snake_segment.obj')
     }
   },
   textures: {
@@ -28,7 +32,8 @@ const Assets = {
     grassLM: prepareTexture(require('../../assets/textures/blockGrassLight.jpg')),
     lava: prepareTexture(require('../../assets/textures/blockLava.jpg')),
     lavaLM: prepareTexture(require('../../assets/textures/blockLavaLM.jpg')),
-    rockNM: prepareTexture(require('../../assets/textures/rocksNM.jpg'))
+    rockNM: prepareTexture(require('../../assets/textures/rocksNM.jpg')),
+    rustLM: prepareTexture(require('../../assets/textures/rustLight.jpg'))
   }
 };
 

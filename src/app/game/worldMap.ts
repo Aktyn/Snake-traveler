@@ -16,6 +16,8 @@ export default class WorldMap implements Updatable {
   private chunks: Chunk[] = [];
   private lightSources: LightSource[] = [];
 
+  private objects: Updatable[] = [];
+
   private chunksBounds = {
     left: 0,
     right: 0,
@@ -107,7 +109,15 @@ export default class WorldMap implements Updatable {
     this.cam.zoom(factor);
   }
 
+  addObject(object: Updatable) {
+    this.objects.push(object);
+  }
+
   update(delta: number) {
+    for (const object of this.objects) {
+      object.update(delta);
+    }
+
     this.cam.update(delta);
 
     const cameraChunkPos = Chunk.clampPos(this.cam);

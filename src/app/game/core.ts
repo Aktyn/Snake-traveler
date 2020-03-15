@@ -1,21 +1,18 @@
 import scene from '../graphics/scene';
 import WorldMap from './worldMap';
 import { assert } from '../common/utils';
+import Player from './player';
 
 class Core {
   private animId = 0;
   private debugger: ((debugInfo: string) => void) | null = null;
   private debuggerContent = '';
   private map: WorldMap | null = null;
+  private player: Player | null = null;
 
   private readonly wheelListener = this.onWheel.bind(this);
   private readonly keyDownListener = this.onKeyDown.bind(this);
   private readonly keyUpListener = this.onKeyUp.bind(this);
-
-  private steering = {
-    left: false,
-    right: false
-  };
 
   private initControls() {
     window.addEventListener('mousewheel', this.wheelListener);
@@ -40,26 +37,30 @@ class Core {
     switch (key) {
       case 'A':
       case 'ARROWLEFT':
-        this.steering.left = pressed;
+        this.player && (this.player.steering.left = pressed);
         break;
       case 'D':
       case 'ARROWRIGHT':
-        this.steering.right = pressed;
+        this.player && (this.player.steering.right = pressed);
         break;
     }
   }
 
   private update(delta: number) {
     assert(this.map !== null, 'World map does not exists');
+    assert(this.player !== null, 'Player does not exists');
+
+    this.map.getCamera().setPos(this.player.x, this.player.y);
+    this.map.getCamera().setRotation(this.player.getAngle() - Math.PI / 2);
     this.map.update(delta);
 
     //THIS IS TEMPORTARY CAMERA MOVING CODE
-    if (this.steering.left) {
-      this.map.getCamera().move(-delta * 100, 0);
-    }
-    if (this.steering.right) {
-      this.map.getCamera().move(delta * 100, 0);
-    }
+    // if (this.steering.left) {
+    //   this.map.getCamera().move(-delta * 100, 0);
+    // }
+    // if (this.steering.right) {
+    //   this.map.getCamera().move(delta * 100, 0);
+    // }
   }
 
   private startUpdateLoop() {
@@ -93,6 +94,10 @@ class Core {
   init() {
     // this.map = new WorldMap((Math.random() * (1 << 30)) | 0, (Math.random() * (1 << 30)) | 0);
     this.map = new WorldMap(0, 0);
+
+    this.player = new Player(0, 0, 1);
+    this.map.addObject(this.player);
+
     this.startUpdateLoop();
     this.initControls();
   }
