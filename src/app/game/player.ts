@@ -1,6 +1,7 @@
 import predefinedObjects, { ObjectType } from './../graphics/predefined';
 import ObjectBase from './objectBase';
 import { Updatable } from './updatable';
+import core from './core';
 
 export default class Player extends ObjectBase implements Updatable {
   private angle = Math.PI / 2;
@@ -20,7 +21,7 @@ export default class Player extends ObjectBase implements Updatable {
     return this.angle;
   }
 
-  update(delta: number): void {
+  update(delta: number) {
     if (this.steering.left) {
       this.angle += delta * this.rotationSpeed;
     }
@@ -34,5 +35,7 @@ export default class Player extends ObjectBase implements Updatable {
       this.y + Math.sin(this.angle) * this.speed * delta,
       this.z
     );
+
+    core.debug(`Player pos: ${this.x.toFixed(2)}, ${this.y.toFixed(2)}`);
   }
 }

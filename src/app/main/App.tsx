@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 import Renderer from '../graphics/Renderer';
 import GUI from '../gui/GUI';
@@ -17,7 +17,9 @@ function isWebGL2Available() {
 
 function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [debugText, setDebugText] = useState('');
+  const [debugText, setDebugText] = useState<string[]>([]);
+
+  const webGL2Available = useMemo(isWebGL2Available, []);
 
   useEffect(() => {
     onAssetsLoaded(() => {
@@ -28,7 +30,7 @@ function App() {
     return () => console.log('App closed');
   }, []);
 
-  if (!isWebGL2Available()) {
+  if (!webGL2Available) {
     return <div>WebGL is not available</div>;
   }
 

@@ -5,10 +5,9 @@ import Player from './player';
 
 class Core {
   private animId = 0;
-  private debugger: ((debugInfo: string) => void) | null = null;
-  private debuggerContent = '';
+  private debugger: ((debugInfo: string[]) => void) | null = null;
+  private debuggerContent: string[] = [];
   private map: WorldMap | null = null;
-  private player: Player | null = null;
 
   private readonly wheelListener = this.onWheel.bind(this);
   private readonly keyDownListener = this.onKeyDown.bind(this);
@@ -36,20 +35,18 @@ class Core {
     switch (key) {
       case 'A':
       case 'ARROWLEFT':
-        this.player && (this.player.steering.left = pressed);
+        (this.map?.getTargetPlayer()?.steering || ({} as any)).left = pressed;
         break;
       case 'D':
       case 'ARROWRIGHT':
-        this.player && (this.player.steering.right = pressed);
+        (this.map?.getTargetPlayer()?.steering || ({} as any)).right = pressed;
         break;
     }
   }
 
   private update(delta: number) {
     assert(this.map !== null, 'World map does not exists');
-    assert(this.player !== null, 'Player does not exists');
 
-    this.map.getCamera().follow(this.player, this.player.getAngle());
     this.map.update(delta);
   }
 
@@ -74,7 +71,7 @@ class Core {
 
       if (this.debugger) {
         this.debugger(this.debuggerContent);
-        this.debuggerContent = '';
+        this.debuggerContent = [];
       }
     };
 
@@ -84,20 +81,18 @@ class Core {
   init() {
     // this.map = new WorldMap((Math.random() * (1 << 30)) | 0, (Math.random() * (1 << 30)) | 0);
     this.map = new WorldMap(0, 0);
-
-    this.player = new Player(0, 0, 1);
-    this.map.addObject(this.player);
+    this.map.spawnPlayer(0, 0);
 
     this.startUpdateLoop();
     this.initControls();
   }
 
-  registerDebugger(func: (debugInfo: string) => void) {
+  registerDebugger(func: (debugInfo: string[]) => void) {
     this.debugger = func;
   }
 
   debug(content: string) {
-    this.debuggerContent += content + '\n';
+    this.debuggerContent.push(content);
   }
 }
 

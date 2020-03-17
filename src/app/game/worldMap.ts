@@ -6,6 +6,7 @@ import LightSource from './lightSource';
 import { Updatable } from './updatable';
 import Vec2 from '../common/math/vec2';
 import core from './core';
+import Player from './player';
 
 const CHUNKS_DISTANCE = 2; //the number of chunks loaded in each direction from camera center
 
@@ -13,6 +14,8 @@ export default class WorldMap implements Updatable {
   private startPos: Vec2;
 
   private cam: Camera;
+  //private players: Player[] = [];
+  private targetPlayer: Player | null = null;
   private chunks: Chunk[] = [];
   private lightSources: LightSource[] = [];
 
@@ -109,8 +112,69 @@ export default class WorldMap implements Updatable {
     this.cam.zoom(factor);
   }
 
+  spawnPlayer(x: number, y: number, setAsTarget = false): Player {
+    const player = new Player(x, y, 1);
+    this.addObject(player);
+
+    if (setAsTarget || !this.targetPlayer) {
+      this.targetPlayer = player;
+    }
+
+    return player;
+  }
+
+  getTargetPlayer() {
+    return this.targetPlayer;
+  }
+
   addObject(object: Updatable) {
     this.objects.push(object);
+  }
+
+  private updateChunks() {
+    if(!this.targetPlayer) return;
+
+    const playerChunkPos = Chunk.clampPos(this.targetPlayer);
+
+    //horizontal
+    while (playerChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.left) {
+      this.chunksBounds.left -= Chunk.DEFAULT_SIZE;
+      this.loadChunksColumn(this.chunksBounds.left);
+    }
+    while (playerChunkPos.x + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.right) {
+      this.chunksBounds.right += Chunk.DEFAULT_SIZE;
+      this.loadChunksColumn(this.chunksBounds.right);
+    }
+
+    while (playerChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.left + Chunk.DEFAULT_SIZE) {
+      this.unloadChunksColumn(this.chunksBounds.left);
+      this.chunksBounds.left += Chunk.DEFAULT_SIZE;
+    }
+    while (playerChunkPos.x + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.right - Chunk.DEFAULT_SIZE) {
+      this.unloadChunksColumn(this.chunksBounds.right);
+      this.chunksBounds.right -= Chunk.DEFAULT_SIZE;
+    }
+
+    //vertical
+    while (playerChunkPos.y - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.bottom) {
+      this.chunksBounds.bottom -= Chunk.DEFAULT_SIZE;
+      this.loadChunksRow(this.chunksBounds.bottom);
+    }
+    while (playerChunkPos.y + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.top) {
+      this.chunksBounds.top += Chunk.DEFAULT_SIZE;
+      this.loadChunksRow(this.chunksBounds.top);
+    }
+
+    while (playerChunkPos.y - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.bottom + Chunk.DEFAULT_SIZE) {
+      this.unloadChunksRow(this.chunksBounds.bottom);
+      this.chunksBounds.bottom += Chunk.DEFAULT_SIZE;
+    }
+    while (playerChunkPos.y + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.top - Chunk.DEFAULT_SIZE) {
+      this.unloadChunksRow(this.chunksBounds.top);
+      this.chunksBounds.top -= Chunk.DEFAULT_SIZE;
+    }
+
+    core.debug(`chunks: ${this.chunks.length}`);
   }
 
   update(delta: number) {
@@ -118,48 +182,11 @@ export default class WorldMap implements Updatable {
       object.update(delta);
     }
 
+    if (this.targetPlayer) {
+      this.cam.follow(this.targetPlayer, this.targetPlayer.getAngle());
+    }
     this.cam.update(delta);
 
-    const cameraChunkPos = Chunk.clampPos(this.cam);
-
-    //horizontal
-    while (cameraChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.left) {
-      this.chunksBounds.left -= Chunk.DEFAULT_SIZE;
-      this.loadChunksColumn(this.chunksBounds.left);
-    }
-    while (cameraChunkPos.x + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.right) {
-      this.chunksBounds.right += Chunk.DEFAULT_SIZE;
-      this.loadChunksColumn(this.chunksBounds.right);
-    }
-
-    while (cameraChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.left + Chunk.DEFAULT_SIZE) {
-      this.unloadChunksColumn(this.chunksBounds.left);
-      this.chunksBounds.left += Chunk.DEFAULT_SIZE;
-    }
-    while (cameraChunkPos.x + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.right - Chunk.DEFAULT_SIZE) {
-      this.unloadChunksColumn(this.chunksBounds.right);
-      this.chunksBounds.right -= Chunk.DEFAULT_SIZE;
-    }
-
-    //vertical
-    while (cameraChunkPos.y - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.bottom) {
-      this.chunksBounds.bottom -= Chunk.DEFAULT_SIZE;
-      this.loadChunksRow(this.chunksBounds.bottom);
-    }
-    while (cameraChunkPos.y + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.top) {
-      this.chunksBounds.top += Chunk.DEFAULT_SIZE;
-      this.loadChunksRow(this.chunksBounds.top);
-    }
-
-    while (cameraChunkPos.y - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.bottom + Chunk.DEFAULT_SIZE) {
-      this.unloadChunksRow(this.chunksBounds.bottom);
-      this.chunksBounds.bottom += Chunk.DEFAULT_SIZE;
-    }
-    while (cameraChunkPos.y + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.top - Chunk.DEFAULT_SIZE) {
-      this.unloadChunksRow(this.chunksBounds.top);
-      this.chunksBounds.top -= Chunk.DEFAULT_SIZE;
-    }
-
-    core.debug(`chunks: ${this.chunks.length}`);
+    this.updateChunks();
   }
 }
