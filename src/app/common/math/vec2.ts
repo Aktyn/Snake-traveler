@@ -27,25 +27,25 @@ export default class Vec2 {
     this._y = y;
   }
 
-  set(x: number, y: number) {
+  setXY(x: number, y: number) {
     this._x = x;
     this._y = y;
     return this;
   }
 
-  add(x: number, y: number) {
-    this.set(this._x + x, this._y + y);
+  addXY(x: number, y: number) {
+    this.setXY(this._x + x, this._y + y);
     return this;
   }
 
-  sub(x: number, y: number) {
-    this.set(this._x - x, this._y - y);
+  subXY(x: number, y: number) {
+    this.setXY(this._x - x, this._y - y);
     return this;
   }
 
   //static methods
 
   static subtract(v1: Vec2, v2: Vec2) {
-    return v1.clone().sub(v2.x, v2.y);
+    return v1.clone().subXY(v2.x, v2.y);
   }
 }

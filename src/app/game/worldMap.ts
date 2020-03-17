@@ -33,7 +33,7 @@ export default class WorldMap implements Updatable {
     this.cam = new Camera();
     this.cam.setPos(this.startPos.x, this.startPos.y, false);
 
-    this.lightSources.push(new LightSource(this.startPos.x, this.startPos.y, 4, 0xffffff));
+    this.lightSources.push(new LightSource(this.startPos.x, this.startPos.y, 8, 0xffffff));
 
     const startChunkPos = Chunk.clampPos(this.startPos);
     this.chunksBounds.left = startChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE;

@@ -89,6 +89,18 @@ class Scene {
     this.camera.rotation.set(x, y, z);
   }
 
+  //util function
+  private lookAtVector(sourcePoint: THREE.Vector3, destPoint: THREE.Vector3) {
+    return new THREE.Quaternion().setFromRotationMatrix(
+      new THREE.Matrix4().lookAt(sourcePoint, destPoint, new THREE.Vector3(0, 0, 1))
+    );
+  }
+
+  pointCameraAt(x: number, y: number, z: number) {
+    const lookAtQuaternion = this.lookAtVector(this.camera.position, new THREE.Vector3(x, y, z));
+    this.camera.quaternion.copy(lookAtQuaternion);
+  }
+
   addObject(object: THREE.Object3D) {
     this.scene.add(object);
   }

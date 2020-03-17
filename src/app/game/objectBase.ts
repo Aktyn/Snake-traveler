@@ -24,12 +24,12 @@ export default class ObjectBase extends Vec3 {
   }
 
   setPos(x: number, y: number, z: number) {
-    this.set(x, y, z);
+    this.setXYZ(x, y, z);
   }
 
-  set(x: number, y: number, z: number) {
+  setXYZ(x: number, y: number, z: number) {
     this.renderingObject?.position.set(x, y, z);
-    return super.set(x, y, z);
+    return super.setXYZ(x, y, z);
   }
 
   setRotZ(value: number) {

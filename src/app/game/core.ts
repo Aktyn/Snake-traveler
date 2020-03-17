@@ -33,7 +33,6 @@ class Core {
   }
 
   private onKey(key: string, pressed: boolean) {
-    //console.log(key, pressed);
     switch (key) {
       case 'A':
       case 'ARROWLEFT':
@@ -50,17 +49,8 @@ class Core {
     assert(this.map !== null, 'World map does not exists');
     assert(this.player !== null, 'Player does not exists');
 
-    this.map.getCamera().setPos(this.player.x, this.player.y);
-    this.map.getCamera().setRotation(this.player.getAngle() - Math.PI / 2);
+    this.map.getCamera().follow(this.player, this.player.getAngle());
     this.map.update(delta);
-
-    //THIS IS TEMPORTARY CAMERA MOVING CODE
-    // if (this.steering.left) {
-    //   this.map.getCamera().move(-delta * 100, 0);
-    // }
-    // if (this.steering.right) {
-    //   this.map.getCamera().move(delta * 100, 0);
-    // }
   }
 
   private startUpdateLoop() {
