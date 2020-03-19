@@ -1,7 +1,6 @@
 import scene from '../graphics/scene';
 import WorldMap from './worldMap';
 import { assert } from '../common/utils';
-import Player from './player';
 
 class Core {
   private animId = 0;
@@ -79,9 +78,11 @@ class Core {
   }
 
   init() {
-    // this.map = new WorldMap((Math.random() * (1 << 30)) | 0, (Math.random() * (1 << 30)) | 0);
-    this.map = new WorldMap(0, 0);
-    this.map.spawnPlayer(0, 0);
+    const randX = (Math.random() * (1 << 30)) | 0;
+    const randY = (Math.random() * (1 << 30)) | 0;
+    this.map = new WorldMap(randX, randY);
+    // this.map = new WorldMap(0, 0);
+    this.map.spawnPlayer(randX, randY);
 
     this.startUpdateLoop();
     this.initControls();

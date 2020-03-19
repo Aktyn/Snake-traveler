@@ -33,8 +33,7 @@ class Scene {
 
     // this.scene.add(block);
 
-    //const light = new THREE.AmbientLight(0x050a0f);
-    const light = new THREE.AmbientLight(0x202020);
+    const light = new THREE.AmbientLight(0xffffff); //0x202020
     this.scene.add(light);
 
     // const light = new THREE.PointLight(0xffffff, 1, 100);

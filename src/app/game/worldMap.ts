@@ -7,6 +7,7 @@ import { Updatable } from './updatable';
 import Vec2 from '../common/math/vec2';
 import core from './core';
 import Player from './player';
+import Vec3 from '../common/math/vec3';
 
 const CHUNKS_DISTANCE = 2; //the number of chunks loaded in each direction from camera center
 
@@ -14,7 +15,6 @@ export default class WorldMap implements Updatable {
   private startPos: Vec2;
 
   private cam: Camera;
-  //private players: Player[] = [];
   private targetPlayer: Player | null = null;
   private chunks: Chunk[] = [];
   private lightSources: LightSource[] = [];
@@ -33,8 +33,9 @@ export default class WorldMap implements Updatable {
 
     console.log(`Map starting point: [${this.startPos.x}, ${this.startPos.y}]`);
 
-    this.cam = new Camera();
-    this.cam.setPos(this.startPos.x, this.startPos.y, false);
+    this.cam = new Camera(startX, startY);
+    // this.cam.setPos(this.startPos.x, this.startPos.y, false);
+    this.cam.follow(new Vec3(this.startPos.x, this.startPos.y, 1), Math.PI / 2, false);
 
     this.lightSources.push(new LightSource(this.startPos.x, this.startPos.y, 8, 0xffffff));
 
@@ -132,7 +133,7 @@ export default class WorldMap implements Updatable {
   }
 
   private updateChunks() {
-    if(!this.targetPlayer) return;
+    if (!this.targetPlayer) return;
 
     const playerChunkPos = Chunk.clampPos(this.targetPlayer);
 

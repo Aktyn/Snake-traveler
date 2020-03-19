@@ -17,7 +17,7 @@ const Assets = {
   meshes: {
     block1: {
       mesh: null as Object3D | null,
-      path: require('../../assets/meshes/block_solid.obj')
+      path: require('../../assets/meshes/block_simple.obj')
     },
     snakeSegment: {
       mesh: null as Object3D | null,

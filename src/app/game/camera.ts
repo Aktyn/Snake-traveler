@@ -4,7 +4,7 @@ import { Updatable } from './updatable';
 import Vec3 from '../common/math/vec3';
 
 const MIN_CAMERA_HEIGHT = 4;
-const MAX_CAMERA_HEIGHT = 16; //set 32 for testing
+const MAX_CAMERA_HEIGHT = 12; //set 32 for testing
 const DIFF_TOLERANCE = 0.001;
 const CAMERA_SPEED = 10;
 const POSITION_SPEED = 2;
@@ -15,10 +15,6 @@ export default class Camera extends Vec2 implements Updatable {
   private visiblePos = new Vec2(); //for smoothness
   private followTargetPos = new Vec3();
   private visibleTargetPos = new Vec3();
-
-  constructor() {
-    super(0, 0);
-  }
 
   private updateSceneCameraPos() {
     scene.setCameraPos(this.visiblePos, this.cameraHeight);
@@ -44,11 +40,18 @@ export default class Camera extends Vec2 implements Updatable {
     this.targetCameraHeight = Math.max(MIN_CAMERA_HEIGHT, Math.min(MAX_CAMERA_HEIGHT, this.cameraHeight + factor));
   }
 
-  follow(pos: Vec3, angle: number) {
+  follow(pos: Vec3, angle: number, smooth = true) {
     const shiftFactor = this.cameraHeight / 2;
-    this.setPos(pos.x + Math.cos(angle + Math.PI) * shiftFactor, pos.y + Math.sin(angle + Math.PI) * shiftFactor);
+    this.setPos(
+      pos.x + Math.cos(angle + Math.PI) * shiftFactor,
+      pos.y + Math.sin(angle + Math.PI) * shiftFactor,
+      smooth
+    );
 
     this.followTargetPos.setXYZ(pos.x, pos.y, pos.z);
+    if (!smooth) {
+      this.visibleTargetPos.setXYZ(pos.x, pos.y, pos.z);
+    }
   }
 
   update(delta: number) {
