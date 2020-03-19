@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 
-import scene from './scene';
+import sceneRenderer from '../graphics/sceneRenderer';
 
 const Renderer = () => {
   const rendererRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (rendererRef.current) {
-      scene.initDisplay(rendererRef.current);
+      sceneRenderer.initDisplay(rendererRef.current);
     }
   }, []);
 

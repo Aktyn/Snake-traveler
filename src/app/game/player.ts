@@ -1,4 +1,3 @@
-import predefinedObjects, { ObjectType } from './../graphics/predefined';
 import ObjectBase from './objectBase';
 import { Updatable } from './updatable';
 import core from './core';
@@ -13,16 +12,12 @@ export default class Player extends ObjectBase implements Updatable {
     right: false
   };
 
-  constructor(x: number, y: number, z: number) {
-    super(x, y, z, predefinedObjects[ObjectType.SNAKE_SEGMENT].clone());
-  }
-
   getAngle() {
     return this.angle;
   }
 
   update(delta: number) {
-    if (this.steering.left) {
+    /*if (this.steering.left) {
       this.angle += delta * this.rotationSpeed;
     }
     if (this.steering.right) {
@@ -34,7 +29,7 @@ export default class Player extends ObjectBase implements Updatable {
       this.x + Math.cos(this.angle) * this.speed * delta,
       this.y + Math.sin(this.angle) * this.speed * delta,
       this.z
-    );
+    );*/
 
     core.debug(`Player pos: ${this.x.toFixed(2)}, ${this.y.toFixed(2)}`);
   }

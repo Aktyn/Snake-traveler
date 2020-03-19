@@ -1,4 +1,4 @@
-import scene from '../graphics/scene';
+import renderer from '../graphics/sceneRenderer';
 import WorldMap from './worldMap';
 import { assert } from '../common/utils';
 
@@ -66,7 +66,7 @@ class Core {
       lastTime = time;
 
       this.update(delta / 1000.0);
-      scene.render();
+      renderer.render();
 
       if (this.debugger) {
         this.debugger(this.debuggerContent);
@@ -78,10 +78,9 @@ class Core {
   }
 
   init() {
-    const randX = (Math.random() * (1 << 30)) | 0;
-    const randY = (Math.random() * (1 << 30)) | 0;
+    const randX = 0; //(Math.random() * (1 << 30)) | 0;
+    const randY = 0; //(Math.random() * (1 << 30)) | 0;
     this.map = new WorldMap(randX, randY);
-    // this.map = new WorldMap(0, 0);
     this.map.spawnPlayer(randX, randY);
 
     this.startUpdateLoop();

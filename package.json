@@ -21,10 +21,10 @@
     "react-scripts": "3.4.0",
     "simplex-noise": "^2.4.0",
     "sqlite3": "^4.1.1",
-    "three": "^0.114.0",
     "typescript": "^3.8.3"
   },
   "devDependencies": {
+    "@types/webpack-env": "^1.15.1",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",

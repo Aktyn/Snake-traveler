@@ -14,7 +14,7 @@ export default class Chunk extends Vec2 {
   }
 
   destroy() {
-    this.objects.forEach(obj => obj.destroy());
+    //this.objects.forEach(obj => obj.destroy());
     this.objects = [];
   }
 

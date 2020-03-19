@@ -2,12 +2,10 @@ import Camera from './camera';
 import API from '../common/api';
 import Chunk from './chunk';
 import Block from './block';
-import LightSource from './lightSource';
 import { Updatable } from './updatable';
 import Vec2 from '../common/math/vec2';
 import core from './core';
 import Player from './player';
-import Vec3 from '../common/math/vec3';
 
 const CHUNKS_DISTANCE = 2; //the number of chunks loaded in each direction from camera center
 
@@ -17,7 +15,6 @@ export default class WorldMap implements Updatable {
   private cam: Camera;
   private targetPlayer: Player | null = null;
   private chunks: Chunk[] = [];
-  private lightSources: LightSource[] = [];
 
   private objects: Updatable[] = [];
 
@@ -35,9 +32,9 @@ export default class WorldMap implements Updatable {
 
     this.cam = new Camera(startX, startY);
     // this.cam.setPos(this.startPos.x, this.startPos.y, false);
-    this.cam.follow(new Vec3(this.startPos.x, this.startPos.y, 1), Math.PI / 2, false);
+    //this.cam.follow(new Vec3(this.startPos.x, this.startPos.y, 1), Math.PI / 2, false);
 
-    this.lightSources.push(new LightSource(this.startPos.x, this.startPos.y, 8, 0xffffff));
+    //this.lightSources.push(new LightSource(this.startPos.x, this.startPos.y, 8, 0xffffff));
 
     const startChunkPos = Chunk.clampPos(this.startPos);
     this.chunksBounds.left = startChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE;
@@ -86,12 +83,13 @@ export default class WorldMap implements Updatable {
   }
 
   private async loadChunk(x: number, y: number) {
+    //TODO
     const chunk = new Chunk(x, y);
     this.chunks.push(chunk);
     const chunkData = await API.fetchChunk(x, y, Chunk.DEFAULT_SIZE);
 
     chunkData.blocks.forEach(block => {
-      chunk.objects.push(new Block(chunkData.x + block.x, chunkData.y + block.y, block.z, block.type));
+      chunk.objects.push(new Block(chunkData.x + block.x, chunkData.y + block.y));
     });
 
     chunk.loaded = true;
@@ -114,7 +112,7 @@ export default class WorldMap implements Updatable {
   }
 
   spawnPlayer(x: number, y: number, setAsTarget = false): Player {
-    const player = new Player(x, y, 1);
+    const player = new Player(x, y);
     this.addObject(player);
 
     if (setAsTarget || !this.targetPlayer) {
