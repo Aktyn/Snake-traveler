@@ -38,7 +38,7 @@ function loadContext(canvas: HTMLCanvasElement) {
 export default class RendererBase {
   private CANVAS: HTMLCanvasElement;
   protected GL: WebGLRenderingContext;
-  private aspect = 1;
+  protected aspect = 1;
 
   protected framebufferModule = new FramebufferModule();
   protected textureModule = new TextureModule();

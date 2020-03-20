@@ -7,7 +7,8 @@ const emptyShader = { vertex: '', fragment: '' };
 
 const Assets = {
   shaders: {
-    post: emptyShader
+    post: emptyShader,
+    main: emptyShader
   }
 };
 
@@ -30,7 +31,8 @@ async function loadShaderSource(vertex_file_path: string, fragment_file_path: st
 }
 
 async function load() {
-  Assets.shaders.post = await loadShaderSource('main.vs', 'main.fs');
+  Assets.shaders.post = await loadShaderSource('post_game.vs', 'post_game_long.fs');
+  Assets.shaders.main = await loadShaderSource('main.vs', 'main.fs');
 
   loadListeners.forEach(listener => listener(Assets));
   loadListeners.length = 0;

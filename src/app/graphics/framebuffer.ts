@@ -22,8 +22,8 @@ export default class FramebufferModule {
 
   create(GL: WebGLRenderingContext, options: FramebufferOptions): ExtendedFramebuffer {
     const linear = options.linear === undefined ? true : options.linear; //default
-    const width = options.width || 0;
-    const height = options.height || 0;
+    const width = options.fullscreen ? window.innerWidth : options.width || 0;
+    const height = options.fullscreen ? window.innerHeight : options.height || 0;
 
     const fb = GL.createFramebuffer();
     if (fb === null) throw new Error('Cannot create FrameBuffer');

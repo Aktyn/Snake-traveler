@@ -1,6 +1,6 @@
 import ObjectBase from './objectBase';
 import { Updatable } from './updatable';
-import core from './core';
+import { debugLine } from '../debugger';
 
 export default class Player extends ObjectBase implements Updatable {
   private angle = Math.PI / 2;
@@ -31,6 +31,6 @@ export default class Player extends ObjectBase implements Updatable {
       this.z
     );*/
 
-    core.debug(`Player pos: ${this.x.toFixed(2)}, ${this.y.toFixed(2)}`);
+    debugLine(`Player pos: ${this.x.toFixed(2)}, ${this.y.toFixed(2)}`);
   }
 }

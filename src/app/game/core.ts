@@ -1,16 +1,21 @@
-import renderer from '../graphics/sceneRenderer';
 import WorldMap from './worldMap';
 import { assert } from '../common/utils';
+import SceneRenderer from './sceneRenderer';
+import * as Debugger from '../debugger';
 
-class Core {
+export default class Core {
   private animId = 0;
-  private debugger: ((debugInfo: string[]) => void) | null = null;
-  private debuggerContent: string[] = [];
+
   private map: WorldMap | null = null;
+  private readonly renderer: SceneRenderer;
 
   private readonly wheelListener = this.onWheel.bind(this);
   private readonly keyDownListener = this.onKeyDown.bind(this);
   private readonly keyUpListener = this.onKeyUp.bind(this);
+
+  constructor(renderer: SceneRenderer) {
+    this.renderer = renderer;
+  }
 
   private initControls() {
     window.addEventListener('mousewheel', this.wheelListener);
@@ -46,7 +51,10 @@ class Core {
   private update(delta: number) {
     assert(this.map !== null, 'World map does not exists');
 
+    Debugger.clear();
     this.map.update(delta);
+    this.renderer.render(this.map);
+    Debugger.apply();
   }
 
   private startUpdateLoop() {
@@ -66,12 +74,6 @@ class Core {
       lastTime = time;
 
       this.update(delta / 1000.0);
-      renderer.render();
-
-      if (this.debugger) {
-        this.debugger(this.debuggerContent);
-        this.debuggerContent = [];
-      }
     };
 
     tick(0);
@@ -86,15 +88,4 @@ class Core {
     this.startUpdateLoop();
     this.initControls();
   }
-
-  registerDebugger(func: (debugInfo: string[]) => void) {
-    this.debugger = func;
-  }
-
-  debug(content: string) {
-    this.debuggerContent.push(content);
-  }
 }
-
-const core = new Core();
-export default core;

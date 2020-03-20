@@ -2,21 +2,32 @@ import React, { useEffect, useState, useMemo } from 'react';
 
 import Renderer from './Renderer';
 import GUI from '../gui/GUI';
-import core from '../game/core';
+import Core from '../game/core';
 import { onAssetsLoaded } from '../graphics/assets';
 import DebugInfo from './DebugInfo';
 import { isWebGL2Available } from '../common/utils';
+import SceneRenderer from '../game/sceneRenderer';
+import RendererBase from '../graphics/rendererBase';
+import { registerDebugger } from '../debugger';
 
 function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [debugText, setDebugText] = useState<string[]>([]);
+  const [renderer, setRenderer] = useState<RendererBase | null>(null);
+  const [, setCore] = useState<Core | null>(null);
 
   const webGL2Available = useMemo(isWebGL2Available, []);
 
   useEffect(() => {
     onAssetsLoaded(() => {
+      const renderer = new SceneRenderer();
+      setRenderer(renderer);
+
+      const core = new Core(renderer);
+      setCore(core);
+
       core.init();
-      core.registerDebugger(setDebugText);
+      registerDebugger(setDebugText);
       setAssetsLoaded(true);
     });
     return () => console.log('App closed');
@@ -32,7 +43,7 @@ function App() {
 
   return (
     <div className="layout">
-      <Renderer />
+      {renderer && <Renderer renderer={renderer} />}
       <GUI />
       <DebugInfo content={debugText} />
     </div>

@@ -52,12 +52,12 @@ export default class ShaderModule {
   create(GL: WebGLRenderingContext, sources: { vertex: string; fragment: string }): ExtendedShader {
     if (GL === undefined) throw new Error('GL context required');
 
-    const compiled_program = compileShader(GL, sources.vertex, sources.fragment);
+    const compiledProgram = compileShader(GL, sources.vertex, sources.fragment);
 
     const self = this;
 
     return {
-      program: compiled_program,
+      program: compiledProgram,
       bind: function() {
         GL.useProgram(this.program);
         self.currentShaderProgram = this.program;
