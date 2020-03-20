@@ -2,33 +2,43 @@ import * as SimplexNoise from 'simplex-noise';
 
 const simplex = new SimplexNoise(Math.random);
 
-const MAX_HEIGHT_UP = 4;
-const MAX_HEIGHT_DOWN = -4;
-
-const normalizeNoise = (value: number) => (value + 1.0) / 2.0;
+const normalizeNoise = (x: number, y: number) => (simplex.noise2D(x, y) + 1.0) / 2.0;
 
 const Generator = {
-  /** x and y should be integers */
-  generateChunk: (_x: number, _y: number, chunkSize: number) => {
-    if (_x % chunkSize || _y % chunkSize) {
+  /** params should be integers */
+  generateChunk: (x: number, y: number, chunkSize: number) => {
+    x = x | 0;
+    y = y | 0;
+    chunkSize = chunkSize | 0;
+
+    if (x % chunkSize || y % chunkSize) {
       throw new Error('Incorrect chunk coordinates');
     }
 
-    const chunkX = _x;
-    const chunkY = _y;
+    //TODO: add stringified json with other data to this buffer
+    const data = Buffer.alloc(chunkSize * chunkSize);
 
-    const blocks = [];
+    for (let _x = 0; _x < chunkSize; _x++) {
+      for (let _y = 0; _y < chunkSize; _y++) {
+        const index = _x + _y * chunkSize;
 
-    for (let x = 0; x < chunkSize; x++) {
-      for (let y = 0; y < chunkSize; y++) {
-        const xx = (chunkX + x) / (chunkSize * 2);
+        const xx = (x + _x) / (chunkSize * 2);
+        const yy = (y + _y) / (chunkSize * 2);
+        const noise = normalizeNoise(xx, yy);
+
+        const biomes = 2;
+        const biomeScale = 0.25;
+        const biome = (normalizeNoise(xx * biomeScale, yy * biomeScale) * biomes) | 0;
+
+        data[index] = noise < 0.5 ? biome : 255;
+        //data[index] = (normalizeNoise(xx, yy) * 256) | 0;
+
+        /*const xx = (chunkX + x) / (chunkSize * 2);
         const yy = (chunkY + y) / (chunkSize * 2);
         let noise = normalizeNoise(simplex.noise2D(xx, yy));
         if (noise < 0.5) {
           noise = 0.5;
         }
-        //const noise2 = simplex.noise2D((chunkX + x) / (chunkSize / 4), (chunkY + y) / (chunkSize / 4));
-        const z = (MAX_HEIGHT_DOWN + noise * (MAX_HEIGHT_UP - MAX_HEIGHT_DOWN)) | 0;
 
         const biomes = 2,
           biomeScale = 0.25;
@@ -39,15 +49,16 @@ const Generator = {
           y,
           z,
           type: z > 0 ? 0 : 1 + biome
-        });
+        });*/
       }
     }
 
-    return {
-      x: chunkX,
-      y: chunkY,
-      blocks
-    };
+    /*return {
+      x,
+      y,
+      data
+    };*/
+    return data;
   }
 };
 

@@ -11,7 +11,7 @@ db.serialize(function() {
   db.run('CREATE TABLE IF NOT EXISTS lorem (info TEXT)');
 
   const stmt = db.prepare('INSERT INTO lorem VALUES (?)');
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < 3; i++) {
     stmt.run('Ipsum ' + i);
   }
   stmt.finalize();

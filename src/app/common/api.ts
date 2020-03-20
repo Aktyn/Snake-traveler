@@ -2,19 +2,12 @@ import Config from './config';
 
 const BASE_URL = `http://localhost:${Config.SERVER_PORT}`;
 
-interface ChunkI {
-  x: number;
-  y: number;
-  size: number;
-  blocks: { x: number; y: number; z: number; type: number }[];
-}
-
 const API = {
-  fetchChunk: (x: number, y: number, size: number): Promise<ChunkI> => {
+  fetchChunk: (x: number, y: number, size: number): Promise<ArrayBuffer> => {
     return fetch(`${BASE_URL}/chunk/${x}/${y}/${size}`, {
       method: 'GET',
       mode: 'cors'
-    }).then(res => res.json());
+    }).then(res => res.arrayBuffer());
   }
 };
 

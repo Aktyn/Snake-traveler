@@ -7,7 +7,7 @@ import Vec2 from '../common/math/vec2';
 import core from './core';
 import Player from './player';
 
-const CHUNKS_DISTANCE = 2; //the number of chunks loaded in each direction from camera center
+const CHUNKS_DISTANCE = 1; //the number of chunks loaded in each direction from camera center
 
 export default class WorldMap implements Updatable {
   private startPos: Vec2;
@@ -37,10 +37,10 @@ export default class WorldMap implements Updatable {
     //this.lightSources.push(new LightSource(this.startPos.x, this.startPos.y, 8, 0xffffff));
 
     const startChunkPos = Chunk.clampPos(this.startPos);
-    this.chunksBounds.left = startChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE;
-    this.chunksBounds.right = startChunkPos.x + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE;
-    this.chunksBounds.top = startChunkPos.y + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE;
-    this.chunksBounds.bottom = startChunkPos.y - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE;
+    this.chunksBounds.left = startChunkPos.x - Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE;
+    this.chunksBounds.right = startChunkPos.x + Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE;
+    this.chunksBounds.top = startChunkPos.y + Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE;
+    this.chunksBounds.bottom = startChunkPos.y - Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE;
 
     this.reloadChunks().catch(console.error);
   }
@@ -51,33 +51,33 @@ export default class WorldMap implements Updatable {
     this.chunks = [];
 
     //load new set of visible chunks
-    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.DEFAULT_SIZE) {
-      for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.DEFAULT_SIZE) {
+    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.DEFAULT_RESOLUTION) {
+      for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.DEFAULT_RESOLUTION) {
         this.loadChunk(x, y).catch(() => {});
       }
     }
   }
 
   private loadChunksColumn(x: number) {
-    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.DEFAULT_SIZE) {
+    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.DEFAULT_RESOLUTION) {
       this.loadChunk(x, y).catch(() => {});
     }
   }
 
   private unloadChunksColumn(x: number) {
-    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.DEFAULT_SIZE) {
+    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.DEFAULT_RESOLUTION) {
       this.unloadChunk(x, y);
     }
   }
 
   private loadChunksRow(y: number) {
-    for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.DEFAULT_SIZE) {
+    for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.DEFAULT_RESOLUTION) {
       this.loadChunk(x, y).catch(() => {});
     }
   }
 
   private unloadChunksRow(y: number) {
-    for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.DEFAULT_SIZE) {
+    for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.DEFAULT_RESOLUTION) {
       this.unloadChunk(x, y);
     }
   }
@@ -86,13 +86,33 @@ export default class WorldMap implements Updatable {
     //TODO
     const chunk = new Chunk(x, y);
     this.chunks.push(chunk);
-    const chunkData = await API.fetchChunk(x, y, Chunk.DEFAULT_SIZE);
+    const chunkData = await API.fetchChunk(x, y, Chunk.DEFAULT_RESOLUTION);
 
-    chunkData.blocks.forEach(block => {
+    /*chunkData.blocks.forEach(block => {
       chunk.objects.push(new Block(chunkData.x + block.x, chunkData.y + block.y));
-    });
+    });*/
 
+    chunk.data = new Uint8ClampedArray(chunkData);
     chunk.loaded = true;
+
+    //test
+    const canv = document.createElement('canvas');
+    canv.width = canv.height = Chunk.DEFAULT_RESOLUTION;
+    const ctx = canv.getContext('2d', { alpha: false });
+    const imgData = new ImageData(canv.width, canv.height);
+    for (let i = 0; i < canv.width * canv.height; i++) {
+      imgData.data[i * 4 + 0] = chunk.data[i];
+      imgData.data[i * 4 + 1] = chunk.data[i];
+      imgData.data[i * 4 + 2] = chunk.data[i];
+      imgData.data[i * 4 + 3] = 255;
+    }
+    ctx?.putImageData(imgData, 0, 0);
+
+    canv.style.position = 'fixed';
+    canv.style.left = `${(x + window.innerWidth / 2) | 0}px`;
+    canv.style.top = `${(y + window.innerHeight / 2) | 0}px`;
+
+    document.body.appendChild(canv);
   }
 
   private unloadChunk(x: number, y: number) {
@@ -136,41 +156,53 @@ export default class WorldMap implements Updatable {
     const playerChunkPos = Chunk.clampPos(this.targetPlayer);
 
     //horizontal
-    while (playerChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.left) {
-      this.chunksBounds.left -= Chunk.DEFAULT_SIZE;
+    while (playerChunkPos.x - Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE < this.chunksBounds.left) {
+      this.chunksBounds.left -= Chunk.DEFAULT_RESOLUTION;
       this.loadChunksColumn(this.chunksBounds.left);
     }
-    while (playerChunkPos.x + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.right) {
-      this.chunksBounds.right += Chunk.DEFAULT_SIZE;
+    while (playerChunkPos.x + Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE > this.chunksBounds.right) {
+      this.chunksBounds.right += Chunk.DEFAULT_RESOLUTION;
       this.loadChunksColumn(this.chunksBounds.right);
     }
 
-    while (playerChunkPos.x - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.left + Chunk.DEFAULT_SIZE) {
+    while (
+      playerChunkPos.x - Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE >
+      this.chunksBounds.left + Chunk.DEFAULT_RESOLUTION
+    ) {
       this.unloadChunksColumn(this.chunksBounds.left);
-      this.chunksBounds.left += Chunk.DEFAULT_SIZE;
+      this.chunksBounds.left += Chunk.DEFAULT_RESOLUTION;
     }
-    while (playerChunkPos.x + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.right - Chunk.DEFAULT_SIZE) {
+    while (
+      playerChunkPos.x + Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE <
+      this.chunksBounds.right - Chunk.DEFAULT_RESOLUTION
+    ) {
       this.unloadChunksColumn(this.chunksBounds.right);
-      this.chunksBounds.right -= Chunk.DEFAULT_SIZE;
+      this.chunksBounds.right -= Chunk.DEFAULT_RESOLUTION;
     }
 
     //vertical
-    while (playerChunkPos.y - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.bottom) {
-      this.chunksBounds.bottom -= Chunk.DEFAULT_SIZE;
+    while (playerChunkPos.y - Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE < this.chunksBounds.bottom) {
+      this.chunksBounds.bottom -= Chunk.DEFAULT_RESOLUTION;
       this.loadChunksRow(this.chunksBounds.bottom);
     }
-    while (playerChunkPos.y + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.top) {
-      this.chunksBounds.top += Chunk.DEFAULT_SIZE;
+    while (playerChunkPos.y + Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE > this.chunksBounds.top) {
+      this.chunksBounds.top += Chunk.DEFAULT_RESOLUTION;
       this.loadChunksRow(this.chunksBounds.top);
     }
 
-    while (playerChunkPos.y - Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE > this.chunksBounds.bottom + Chunk.DEFAULT_SIZE) {
+    while (
+      playerChunkPos.y - Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE >
+      this.chunksBounds.bottom + Chunk.DEFAULT_RESOLUTION
+    ) {
       this.unloadChunksRow(this.chunksBounds.bottom);
-      this.chunksBounds.bottom += Chunk.DEFAULT_SIZE;
+      this.chunksBounds.bottom += Chunk.DEFAULT_RESOLUTION;
     }
-    while (playerChunkPos.y + Chunk.DEFAULT_SIZE * CHUNKS_DISTANCE < this.chunksBounds.top - Chunk.DEFAULT_SIZE) {
+    while (
+      playerChunkPos.y + Chunk.DEFAULT_RESOLUTION * CHUNKS_DISTANCE <
+      this.chunksBounds.top - Chunk.DEFAULT_RESOLUTION
+    ) {
       this.unloadChunksRow(this.chunksBounds.top);
-      this.chunksBounds.top -= Chunk.DEFAULT_SIZE;
+      this.chunksBounds.top -= Chunk.DEFAULT_RESOLUTION;
     }
 
     core.debug(`chunks: ${this.chunks.length}`);

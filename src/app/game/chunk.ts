@@ -1,27 +1,21 @@
-import ObjectBase from './objectBase';
 import Vec2 from '../common/math/vec2';
 
 export default class Chunk extends Vec2 {
-  public static DEFAULT_SIZE = 16; //should be defined with same value as in server
+  public static DEFAULT_RESOLUTION = 256;
 
-  objects: ObjectBase[] = [];
-  readonly size: number;
+  //objects: ObjectBase[] = [];
   loaded = false;
-
-  constructor(x: number, y: number, size = Chunk.DEFAULT_SIZE) {
-    super(x, y);
-    this.size = size;
-  }
+  data: Uint8ClampedArray | null = null;
 
   destroy() {
     //this.objects.forEach(obj => obj.destroy());
-    this.objects = [];
+    //this.objects = [];
   }
 
   static clampPos(pos: Vec2) {
     const xInt = pos.x | 0;
     const yInt = pos.y | 0;
 
-    return new Vec2(xInt - (xInt % Chunk.DEFAULT_SIZE), yInt - (yInt % Chunk.DEFAULT_SIZE));
+    return new Vec2(xInt - (xInt % Chunk.DEFAULT_RESOLUTION), yInt - (yInt % Chunk.DEFAULT_RESOLUTION));
   }
 }

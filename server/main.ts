@@ -16,7 +16,7 @@ app.get('/chunk/:x/:y/:size', (req, res) => {
   }
   try {
     const chunk = Generator.generateChunk(parseInt(req.params.x), parseInt(req.params.y), parseInt(req.params.size));
-    res.json(chunk);
+    res.status(200).send(chunk);
   } catch (e) {
     res.status(500).send(e.message);
   }

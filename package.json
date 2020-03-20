@@ -32,7 +32,7 @@
     "prettier": "^1.19.1"
   },
   "scripts": {
-    "server:dev": "nodemon --watch /server/**/* --exec 'tsc -p ./server/tsconfig.json && node ./server_dist/main.js' -e ts",
+    "server:dev": "nodemon --watch /server/**/* --exec \"tsc -p ./server/tsconfig.json && node ./server_dist/main.js\" -e ts",
     "server:publish": "tsc -p ./server/tsconfig.json",
     "server:run": "node ./server_dist/main.js",
     "start": "react-scripts start",
