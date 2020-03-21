@@ -53,23 +53,23 @@ export default class RendererBase {
     this.resize();
   }
 
-  private resize() {
-    this.aspect = window.innerWidth / window.innerHeight;
+  protected resize(w = window.innerWidth, h = window.innerHeight) {
+    this.aspect = w / h;
 
-    this.CANVAS.width = window.innerWidth;
-    this.CANVAS.height = window.innerHeight;
+    this.CANVAS.width = w;
+    this.CANVAS.height = h;
     this.GL = loadContext(this.CANVAS); //TODO: optimize by not reloading context every time
 
     for (const fb of this.framebufferModule.getFullscreenFramebuffers()) {
-      fb.updateTextureResolution(this.CANVAS.width, this.CANVAS.height);
+      fb.updateTextureResolution(w, h);
     }
 
-    this.GL.viewport(0, 0, this.CANVAS.width, this.CANVAS.height);
+    this.GL.viewport(0, 0, w, h);
   }
 
   private initListeners() {
     window.addEventListener('resize', event => {
-      this.resize();
+      this.resize((event.target as Window)?.innerWidth, (event.target as Window)?.innerHeight);
     });
   }
 

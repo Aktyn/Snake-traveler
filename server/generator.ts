@@ -1,11 +1,11 @@
 import * as SimplexNoise from 'simplex-noise';
 
-const simplex = new SimplexNoise(Math.random);
+const simplex = new SimplexNoise('mgdlnkczmr');
 
 const normalizeNoise = (x: number, y: number) => (simplex.noise2D(x, y) + 1.0) / 2.0;
 
 const Generator = {
-  /** params should be integers */
+  /** params should be integers */ //TODO: dynamic number of biomes
   generateChunk: (x: number, y: number, chunkSize: number) => {
     x = x | 0;
     y = y | 0;
@@ -30,7 +30,7 @@ const Generator = {
         const biomeScale = 0.25;
         const biome = (normalizeNoise(xx * biomeScale, yy * biomeScale) * biomes) | 0;
 
-        data[index] = noise < 0.5 ? biome : 255;
+        data[index] = noise < 0.5 ? biome : biome | 0x80; //first bit set to 1 indicates height
         //data[index] = (normalizeNoise(xx, yy) * 256) | 0;
 
         /*const xx = (chunkX + x) / (chunkSize * 2);

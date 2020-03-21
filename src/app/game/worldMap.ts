@@ -6,7 +6,7 @@ import Vec2 from '../common/math/vec2';
 import Player from './player';
 import { debugLine } from '../debugger';
 
-const CHUNKS_DISTANCE = 3; //the number of chunks loaded in each direction from camera center
+const CHUNKS_DISTANCE = 5; //the number of chunks loaded in each direction from camera center
 
 export default class WorldMap implements Updatable {
   private startPos: Vec2;

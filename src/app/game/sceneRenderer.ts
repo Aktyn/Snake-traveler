@@ -18,6 +18,7 @@ export default class SceneRenderer extends RendererBase {
   private readonly framebuffers: { paint: ExtendedFramebuffer };
 
   private readonly cameraBuff = new Float32Array([0, 0, 1]); //TODO: make camera object
+  private shadowVector: Float32Array | null = null;
 
   constructor() {
     super();
@@ -33,6 +34,22 @@ export default class SceneRenderer extends RendererBase {
 
     const rect = this.vboModule.create(this.GL, rectData);
     this.VBO_RECT = rect;
+    this.updateShadowVector();
+  }
+
+  private updateShadowVector(w = window.innerWidth, h = window.innerHeight) {
+    const len = Math.sqrt(w * w + h * h);
+    const normalized = [-h / len, w / len];
+
+    if (!this.shadowVector) {
+      this.shadowVector = new Float32Array(normalized);
+    }
+    this.shadowVector.set(normalized);
+  }
+
+  protected resize(w = window.innerWidth, h = window.innerHeight) {
+    super.resize(w, h);
+    this.updateShadowVector(w, h);
   }
 
   private prepareSceneFramebuffer() {
@@ -83,8 +100,12 @@ export default class SceneRenderer extends RendererBase {
 
     //drawing paint layer
     this.textureModule.active(this.GL, 1);
-    this.shaderModule.uniformInt(this.GL, 'curves_pass', 1);
+    this.shaderModule.uniformInt(this.GL, 'foreground_pass', 1);
     this.framebuffers.paint.bindTexture();
+
+    this.shadowVector && this.shaderModule.uniformVec2(this.GL, 'offset', this.shadowVector);
+    this.shaderModule.uniformVec3(this.GL, 'camera', this.cameraBuff);
+    this.shaderModule.uniformFloat(this.GL, 'aspect', this.aspect);
 
     this.VBO_RECT.draw();
   }

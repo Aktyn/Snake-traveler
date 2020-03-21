@@ -44,15 +44,28 @@ export default class Chunk extends Vec2 {
 
     this._canvas = document.createElement('canvas');
     this._canvas.width = this._canvas.height = Chunk.RESOLUTION;
-    const ctx = this._canvas.getContext('2d', { alpha: false });
+    const ctx = this._canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
     const imgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
+
+    const biomes = [
+      //TEMP
+      [255, 128, 128],
+      [128, 255, 128]
+    ];
     for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
-      imgData.data[i * 4 + 0] = this.data[i];
-      imgData.data[i * 4 + 1] = this.data[i];
-      imgData.data[i * 4 + 2] = this.data[i];
-      imgData.data[i * 4 + 3] = 255;
+      // imgData.data[i * 4 + 0] = this.data[i];
+      // imgData.data[i * 4 + 1] = this.data[i];
+      // imgData.data[i * 4 + 2] = this.data[i];
+      // imgData.data[i * 4 + 3] = 255;
+
+      //foreground data (wall color can be set here (according to biome))
+      const biome = this.data[i] & ~0x80;
+      imgData.data[i * 4 + 0] = biomes[biome][0];
+      imgData.data[i * 4 + 1] = biomes[biome][1];
+      imgData.data[i * 4 + 2] = biomes[biome][2];
+      imgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
     }
-    ctx?.putImageData(imgData, 0, 0);
+    ctx.putImageData(imgData, 0, 0);
 
     this.needTextureUpdate = true;
   }
