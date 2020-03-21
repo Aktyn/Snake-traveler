@@ -66,19 +66,48 @@ export default class Chunk extends Vec2 {
     const foregroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
 
     for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
-      //TODO: antialias texture
       //foreground data (wall color can be set here (according to biome))
       const biome = this.data[i] & ~0x80;
 
       backgroundImgData.data[i * 4 + 0] = Biomes[biome].background.byteBuffer[0];
       backgroundImgData.data[i * 4 + 1] = Biomes[biome].background.byteBuffer[1];
       backgroundImgData.data[i * 4 + 2] = Biomes[biome].background.byteBuffer[2];
-      backgroundImgData.data[i * 4 + 3] = 255;
+      backgroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0; //255;
 
       foregroundImgData.data[i * 4 + 0] = Palette.WALLS.byteBuffer[0];
       foregroundImgData.data[i * 4 + 1] = Palette.WALLS.byteBuffer[1];
       foregroundImgData.data[i * 4 + 2] = Palette.WALLS.byteBuffer[2];
-      foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
+      //foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
+    }
+
+    //little blur for foreground texture
+    for (let x = 0; x < Chunk.RESOLUTION; x++) {
+      for (let y = 0; y < Chunk.RESOLUTION; y++) {
+        const i = x + y * Chunk.RESOLUTION;
+
+        let neighbors = 0; //0 -> 8
+        for (let yy = -1; yy <= 1; yy++) {
+          for (let xx = -1; xx <= 1; xx++) {
+            if (
+              x + xx < 0 ||
+              x + xx >= Chunk.RESOLUTION ||
+              y + yy < 0 ||
+              y + yy >= Chunk.RESOLUTION ||
+              (xx === 0 && yy === 0)
+            ) {
+              neighbors++;
+              continue;
+            }
+            const j = x + xx + (y + yy) * Chunk.RESOLUTION;
+            if (backgroundImgData.data[j * 4 + 3] > 0) {
+              neighbors++;
+            }
+          }
+        }
+
+        foregroundImgData.data[i * 4 + 3] = (backgroundImgData.data[i * 4 + 3] * (neighbors / 8.0)) | 0;
+        backgroundImgData.data[i * 4 + 3] = 255;
+      }
     }
 
     Chunk.setImageDataToCanvas(this.canvases.background, backgroundImgData);
