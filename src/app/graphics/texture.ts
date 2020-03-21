@@ -11,7 +11,7 @@ export interface ExtendedTexture {
   destroy(): void;
 }
 
-function stitchTextureObject(GL: WebGLRenderingContext, texture: WebGLTexture): ExtendedTexture {
+function stitchTextureObject(GL: WebGL2RenderingContext, texture: WebGLTexture): ExtendedTexture {
   return {
     webglTexture: texture,
     //fb: null,//framebuffer
@@ -40,7 +40,7 @@ function stitchTextureObject(GL: WebGLRenderingContext, texture: WebGLTexture): 
 }
 
 export default class TextureModule {
-  createFrom(GL: WebGLRenderingContext, image: ImageData | HTMLCanvasElement | HTMLImageElement, linear = true) {
+  createFrom(GL: WebGL2RenderingContext, image: ImageData | HTMLCanvasElement | HTMLImageElement, linear = true) {
     const texture = GL.createTexture();
     if (texture === null) throw new Error('Cannot create WebGLTexture');
 
@@ -71,7 +71,7 @@ export default class TextureModule {
     return stitchTextureObject(GL, texture);
   }
 
-  active(GL: WebGLRenderingContext, number = 0) {
+  active(GL: WebGL2RenderingContext, number = 0) {
     GL.activeTexture(GL.TEXTURE0 + number);
   }
 

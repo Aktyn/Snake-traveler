@@ -5,7 +5,7 @@ import Assets from '../graphics/assets';
 import WorldMap from './worldMap';
 import { ExtendedFramebuffer } from '../graphics/framebuffer';
 import { Palette } from '../common/colors';
-import { assert } from '../common/utils';
+import Chunk from './chunk';
 
 const rectData = {
   vertex: [-1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1],
@@ -15,7 +15,7 @@ const rectData = {
 export default class SceneRenderer extends RendererBase {
   private readonly VBO_RECT: VBO_I;
   private readonly shaders: { post: ExtendedShader; main: ExtendedShader };
-  private readonly framebuffers: { paint: ExtendedFramebuffer };
+  private readonly framebuffers: { background: ExtendedFramebuffer; foreground: ExtendedFramebuffer };
 
   private readonly cameraBuff = new Float32Array([0, 0, 1]); //TODO: make camera object
   private shadowVector: Float32Array | null = null;
@@ -29,7 +29,8 @@ export default class SceneRenderer extends RendererBase {
     };
 
     this.framebuffers = {
-      paint: this.framebufferModule.create(this.GL, { fullscreen: true, linear: true })
+      background: this.framebufferModule.create(this.GL, { fullscreen: true, linear: true }),
+      foreground: this.framebufferModule.create(this.GL, { fullscreen: true, linear: true })
     };
 
     const rect = this.vboModule.create(this.GL, rectData);
@@ -64,8 +65,25 @@ export default class SceneRenderer extends RendererBase {
     this.shaderModule.uniformVec3(this.GL, 'camera', this.cameraBuff);
   }
 
-  render(map: WorldMap) {
-    this.framebuffers.paint.renderToTexture();
+  private synchronizeChunkTextures(chunk: Chunk) {
+    if (chunk.needTextureUpdate) {
+      //updating webgl texture
+      //console.log('updating chunk:', chunk_ref);
+
+      if (!chunk.hasWebGLTexturesGenerated) {
+        chunk.setTextures(
+          this.textureModule.createFrom(this.GL, chunk.canvases.background, true),
+          this.textureModule.createFrom(this.GL, chunk.canvases.foreground, true)
+        );
+      } else {
+        console.log('updating canvas texture');
+        chunk.updateTexture();
+      }
+    }
+  }
+
+  private renderBackgroundPass(map: WorldMap) {
+    this.framebuffers.background.renderToTexture();
     this.prepareSceneFramebuffer();
     this.shaderModule.uniformVec4(this.GL, 'color', Palette.WHITE.buffer);
 
@@ -74,34 +92,50 @@ export default class SceneRenderer extends RendererBase {
         continue;
       }
 
-      if (chunk.needTextureUpdate) {
-        //updating webgl texture
-        //console.log('updating chunk:', chunk_ref);
+      this.synchronizeChunkTextures(chunk);
 
-        if (!chunk.webglTexture) {
-          assert(chunk.canvas, 'There is no generated canvas for chunk');
-
-          chunk.setTexture(this.textureModule.createFrom(this.GL, chunk.canvas, true));
-        } else {
-          console.log('updating canvas texture');
-          chunk.updateTexture();
-        }
-      }
-
-      chunk.webglTexture?.bind();
+      chunk.bindBackgroundTexture();
 
       this.shaderModule.uniformMat3(this.GL, 'u_matrix', chunk.matrix.buffer);
       this.VBO_RECT.draw();
     }
-    this.framebuffers.paint.stopRenderingToTexture();
+    this.framebuffers.background.stopRenderingToTexture();
+  }
+
+  private renderForegroundPass(map: WorldMap) {
+    this.framebuffers.foreground.renderToTexture();
+    this.prepareSceneFramebuffer();
+    this.shaderModule.uniformVec4(this.GL, 'color', Palette.WHITE.buffer);
+
+    for (const chunk of map.chunks) {
+      if (!chunk.isLoaded()) {
+        continue;
+      }
+
+      this.synchronizeChunkTextures(chunk);
+
+      chunk.bindForegroundTexture();
+
+      this.shaderModule.uniformMat3(this.GL, 'u_matrix', chunk.matrix.buffer);
+      this.VBO_RECT.draw();
+    }
+    this.framebuffers.foreground.stopRenderingToTexture();
+  }
+
+  render(map: WorldMap) {
+    this.renderBackgroundPass(map);
+    this.renderForegroundPass(map);
 
     this.shaders.post.bind();
     this.VBO_RECT.bind();
 
-    //drawing paint layer
+    this.textureModule.active(this.GL, 0);
+    this.shaderModule.uniformInt(this.GL, 'background_pass', 0);
+    this.framebuffers.background.bindTexture();
+
     this.textureModule.active(this.GL, 1);
     this.shaderModule.uniformInt(this.GL, 'foreground_pass', 1);
-    this.framebuffers.paint.bindTexture();
+    this.framebuffers.foreground.bindTexture();
 
     this.shadowVector && this.shaderModule.uniformVec2(this.GL, 'offset', this.shadowVector);
     this.shaderModule.uniformVec3(this.GL, 'camera', this.cameraBuff);

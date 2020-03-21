@@ -1,6 +1,13 @@
 import Vec2 from '../common/math/vec2';
 import Matrix2D from '../common/math/matrix2d';
 import { ExtendedTexture } from '../graphics/texture';
+import { Biomes, Palette } from '../common/colors';
+
+const prepareCanvas = () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = Chunk.RESOLUTION;
+  return canvas;
+};
 
 export default class Chunk extends Vec2 {
   public static RESOLUTION = 256;
@@ -9,8 +16,12 @@ export default class Chunk extends Vec2 {
   //objects: ObjectBase[] = [];
   private data: Uint8ClampedArray | null = null;
   private _matrix: Matrix2D;
-  private _webglTexture: ExtendedTexture | null = null;
-  private _canvas: HTMLCanvasElement | null = null;
+  private _webglTextureB: ExtendedTexture | null = null;
+  private _webglTextureF: ExtendedTexture | null = null;
+  public readonly canvases = {
+    background: prepareCanvas(),
+    foreground: prepareCanvas()
+  };
 
   public needTextureUpdate = false;
 
@@ -24,61 +35,67 @@ export default class Chunk extends Vec2 {
   destroy() {
     //this.objects.forEach(obj => obj.destroy());
     //this.objects = [];
-    this._webglTexture?.destroy();
+    this._webglTextureB?.destroy();
+    this._webglTextureF?.destroy();
   }
 
   get matrix() {
     return this._matrix;
   }
 
-  get webglTexture() {
-    return this._webglTexture;
+  get hasWebGLTexturesGenerated() {
+    return Boolean(this._webglTextureB && this._webglTextureF);
   }
 
-  get canvas() {
-    return this._canvas;
+  bindForegroundTexture() {
+    this._webglTextureF?.bind();
+  }
+
+  bindBackgroundTexture() {
+    this._webglTextureB?.bind();
+  }
+
+  private static setImageDataToCanvas(canvas: HTMLCanvasElement, data: ImageData) {
+    canvas.getContext('2d', { alpha: false })?.putImageData(data, 0, 0);
   }
 
   setData(buffer: ArrayBuffer) {
     this.data = new Uint8ClampedArray(buffer);
 
-    this._canvas = document.createElement('canvas');
-    this._canvas.width = this._canvas.height = Chunk.RESOLUTION;
-    const ctx = this._canvas.getContext('2d', { alpha: false }) as CanvasRenderingContext2D;
-    const imgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
+    const backgroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
+    const foregroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
 
-    const biomes = [
-      //TEMP
-      [255, 128, 128],
-      [128, 255, 128]
-    ];
     for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
-      // imgData.data[i * 4 + 0] = this.data[i];
-      // imgData.data[i * 4 + 1] = this.data[i];
-      // imgData.data[i * 4 + 2] = this.data[i];
-      // imgData.data[i * 4 + 3] = 255;
-
+      //TODO: antialias texture
       //foreground data (wall color can be set here (according to biome))
       const biome = this.data[i] & ~0x80;
-      imgData.data[i * 4 + 0] = biomes[biome][0];
-      imgData.data[i * 4 + 1] = biomes[biome][1];
-      imgData.data[i * 4 + 2] = biomes[biome][2];
-      imgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
+
+      backgroundImgData.data[i * 4 + 0] = Biomes[biome].background.byteBuffer[0];
+      backgroundImgData.data[i * 4 + 1] = Biomes[biome].background.byteBuffer[1];
+      backgroundImgData.data[i * 4 + 2] = Biomes[biome].background.byteBuffer[2];
+      backgroundImgData.data[i * 4 + 3] = 255;
+
+      foregroundImgData.data[i * 4 + 0] = Palette.WALLS.byteBuffer[0];
+      foregroundImgData.data[i * 4 + 1] = Palette.WALLS.byteBuffer[1];
+      foregroundImgData.data[i * 4 + 2] = Palette.WALLS.byteBuffer[2];
+      foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
     }
-    ctx.putImageData(imgData, 0, 0);
+
+    Chunk.setImageDataToCanvas(this.canvases.background, backgroundImgData);
+    Chunk.setImageDataToCanvas(this.canvases.foreground, foregroundImgData);
 
     this.needTextureUpdate = true;
   }
 
-  setTexture(texture: ExtendedTexture) {
-    this._webglTexture = texture;
+  setTextures(background: ExtendedTexture, foreground: ExtendedTexture) {
+    this._webglTextureB = background;
+    this._webglTextureF = foreground;
     this.needTextureUpdate = false;
   }
 
   updateTexture() {
-    if (this._canvas) {
-      this._webglTexture?.update(this._canvas, true);
-    }
+    this._webglTextureB?.update(this.canvases.background, true);
+    this._webglTextureF?.update(this.canvases.foreground, true);
     this.needTextureUpdate = false;
   }
 

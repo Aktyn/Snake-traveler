@@ -7,10 +7,10 @@ import VBOModule from './vbo';
 function loadContext(canvas: HTMLCanvasElement) {
   const noSupportMessage = 'No WebGL support. You are not able to play in this browser.';
 
-  let GL: WebGLRenderingContext;
+  let GL: WebGL2RenderingContext;
   try {
     //premultipliedAlpha
-    GL = canvas.getContext('webgl', { antialias: true, alpha: false }) as WebGLRenderingContext;
+    GL = canvas.getContext('webgl2', { antialias: false, alpha: false }) as WebGL2RenderingContext;
 
     /*EXT = 	GL.getExtension('WEBGL_draw_buffers') ||
 				GL.getExtension("OES_draw_buffer") ||
@@ -37,7 +37,7 @@ function loadContext(canvas: HTMLCanvasElement) {
 
 export default class RendererBase {
   private CANVAS: HTMLCanvasElement;
-  protected GL: WebGLRenderingContext;
+  protected GL: WebGL2RenderingContext;
   protected aspect = 1;
 
   protected framebufferModule = new FramebufferModule();

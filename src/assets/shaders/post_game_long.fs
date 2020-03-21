@@ -1,10 +1,13 @@
+#version 300 es
 precision lowp float;
+//precision lowp sampler2DArray;
 
-varying vec2 vUV;
+in lowp vec2 vUV;
 
+//uniform sampler2DArray map_pass;
 //uniform sampler2D scene_pass;
 uniform sampler2D foreground_pass;
-//uniform sampler2D background_texture;
+uniform sampler2D background_pass;
 
 uniform float aspect;
 uniform vec3 camera;
@@ -16,20 +19,22 @@ uniform vec2 offset;//normalized flipped resolution
 #define SAMPLESf 20.0
 #define PARALAX_VALUE 1.5
 
+out vec4 color;
+
 vec4 combined(in vec2 uv) {
     //vec4 foreground = texture2D(scene_pass, uv);
     //return mix(texture2D(foreground_pass, uv), foreground, foreground.a);
-    return texture2D(foreground_pass, uv);
+    //return texture(map_pass, vec3(uv, 1));
+    return texture(foreground_pass, uv);
 }
 
 void main() {
-    //vec4 c = texture2D(foreground_pass, vec2(vUV.x, vUV.y));
-    //gl_FragColor = vec4(c.rgb, 1.0);
+    //color = texture(map_pass, vec3(vUV, float(1)));
 
     vec4 scene = combined(vUV);//texture2D(scene_pass, vUV);
 
     if(scene.a == 1.0) {//optimization
-        gl_FragColor = scene;
+        color = scene;
         return;
     }
 
@@ -43,7 +48,7 @@ void main() {
     float darkness_factor = 1.0;
     float sh = scene.a;
     for(int i=1; i<=SAMPLES; i++) {
-        vec4 curve = texture2D(foreground_pass, vUV+paralax*ll);
+        vec4 curve = combined(vUV+paralax*ll);
         if( curve.a  > 0.0 ) {
             if(curve.a > sh) {
                 sh = curve.a;
@@ -73,13 +78,6 @@ void main() {
     
     shadow = sqrt(min(shadow, 1.0)) * SHADOW_TRANSPARENCY - scene.a;
 
-    // vec2 tile_coord = vec2(
-    //     ((vUV.x-0.5)*aspect / camera.z + (camera.x+map_scale)/2.0)/map_scale, 
-    //     ((vUV.y-0.5) / camera.z + (camera.y+map_scale)/2.0)/map_scale
-    // );
-
-    //vec3 background_tex = texture2D(background_texture, tile_coord).rgb;
-    vec3 background_tex = vec3(0.5, 0.5, 0.5);
-    gl_FragColor = vec4(mix(background_tex * (1.-shadow), scene.rgb, scene.a), 1.);
-    //old: gl_FragColor = vec4(mix(background_color * (1.-shadow), scene.rgb, scene.a), 1.);
+    vec3 background_tex = texture(background_pass, vUV).rgb;
+    color = vec4(mix(background_tex * (1.-shadow), scene.rgb, scene.a), 1.);
 }

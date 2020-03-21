@@ -23,7 +23,7 @@ export default class VBOModule {
     this.shaderModule = shaderModule;
   }
 
-  create(GL: WebGLRenderingContext, data: { vertex: number[]; faces: number[] }): VBO_I {
+  create(GL: WebGL2RenderingContext, data: { vertex: number[]; faces: number[] }): VBO_I {
     const vertex_buff = GL.createBuffer();
     const faces_buff = GL.createBuffer();
 
@@ -69,7 +69,7 @@ export default class VBOModule {
   }
 
   //@count - number of values (size of buffer in floats)
-  createVertexBuffer(GL: WebGLRenderingContext, count: number): VertexBufferI {
+  createVertexBuffer(GL: WebGL2RenderingContext, count: number): VertexBufferI {
     const vertex_buff = GL.createBuffer();
 
     GL.bindBuffer(GL.ARRAY_BUFFER, vertex_buff);

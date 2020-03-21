@@ -6,7 +6,7 @@ const normalizeNoise = (x: number, y: number) => (simplex.noise2D(x, y) + 1.0) /
 
 const Generator = {
   /** params should be integers */ //TODO: dynamic number of biomes
-  generateChunk: (x: number, y: number, chunkSize: number) => {
+  generateChunk: (x: number, y: number, chunkSize: number, biomes: number) => {
     x = x | 0;
     y = y | 0;
     chunkSize = chunkSize | 0;
@@ -26,9 +26,12 @@ const Generator = {
         const yy = (y + _y) / (chunkSize * 2);
         const noise = normalizeNoise(xx, yy);
 
-        const biomes = 2;
-        const biomeScale = 0.25;
-        const biome = (normalizeNoise(xx * biomeScale, yy * biomeScale) * biomes) | 0;
+        const biomeScale = 1 / biomes;
+
+        const biome =
+          (0.5 * normalizeNoise(xx * biomeScale, yy * biomeScale) +
+            0.5 * normalizeNoise((xx * biomeScale) / 2, (yy * biomeScale) / 2) * biomes) |
+          0;
 
         data[index] = noise < 0.5 ? biome : biome | 0x80; //first bit set to 1 indicates height
         //data[index] = (normalizeNoise(xx, yy) * 256) | 0;

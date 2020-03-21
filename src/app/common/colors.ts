@@ -16,5 +16,27 @@ function gen(r: number, g: number, b: number): ColorI {
 
 export const Palette = {
   WHITE: gen(255, 255, 255),
-  BLACK: gen(0, 0, 0)
+  BLACK: gen(0, 0, 0),
+  WALLS: gen(129, 212, 250)
 };
+
+export const Biomes = [
+  {
+    background: gen(255, 128, 128)
+  },
+  {
+    background: gen(128, 255, 128)
+  },
+  {
+    background: gen(128, 128, 255)
+  },
+  {
+    background: gen(255, 255, 128)
+  },
+  {
+    background: gen(128, 255, 255)
+  },
+  {
+    background: gen(255, 128, 255)
+  }
+];

@@ -9,13 +9,18 @@ const app = express();
 
 app.use(cors());
 
-app.get('/chunk/:x/:y/:size', (req, res) => {
-  if (!('x' in req.params && 'y' in req.params && 'size' in req.params)) {
+app.get('/chunk/:x/:y/:size/:biomes', (req, res) => {
+  if (!('x' in req.params && 'y' in req.params && 'size' in req.params && 'biomes' in req.params)) {
     res.status(501).send('Incorrect request parameters');
     return;
   }
   try {
-    const chunk = Generator.generateChunk(parseInt(req.params.x), parseInt(req.params.y), parseInt(req.params.size));
+    const chunk = Generator.generateChunk(
+      parseInt(req.params.x),
+      parseInt(req.params.y),
+      parseInt(req.params.size),
+      parseInt(req.params.biomes)
+    );
     res.status(200).send(chunk);
   } catch (e) {
     res.status(500).send(e.message);

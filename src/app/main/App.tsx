@@ -34,7 +34,7 @@ function App() {
   }, []);
 
   if (!webGL2Available) {
-    return <div>WebGL is not available</div>;
+    return <div>WebGL2 is not available</div>;
   }
 
   if (!assetsLoaded) {

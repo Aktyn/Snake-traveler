@@ -1,5 +1,5 @@
 //CREATE GL OBJECT SHADER BY SHADER TYPE AND ITS SOURCE
-function getShader(GL: WebGLRenderingContext, source: string, type: number) {
+function getShader(GL: WebGL2RenderingContext, source: string, type: number) {
   const shader = GL.createShader(type);
   if (shader === null) throw new Error('Cannot create WebGLShader');
 
@@ -15,7 +15,7 @@ function getShader(GL: WebGLRenderingContext, source: string, type: number) {
 }
 
 //CREATE GL OBJECT SHADER FROM GIVEN SHADER SOURCES
-function compileShader(GL: WebGLRenderingContext, vertex_source: string, fragment_source: string) {
+function compileShader(GL: WebGL2RenderingContext, vertex_source: string, fragment_source: string) {
   const shader_vertex = getShader(GL, vertex_source, GL.VERTEX_SHADER);
   const shader_fragment = getShader(GL, fragment_source, GL.FRAGMENT_SHADER);
 
@@ -49,7 +49,7 @@ export interface ExtendedShader {
 export default class ShaderModule {
   private currentShaderProgram: WebGLProgram | null = null;
 
-  create(GL: WebGLRenderingContext, sources: { vertex: string; fragment: string }): ExtendedShader {
+  create(GL: WebGL2RenderingContext, sources: { vertex: string; fragment: string }): ExtendedShader {
     if (GL === undefined) throw new Error('GL context required');
 
     const compiledProgram = compileShader(GL, sources.vertex, sources.fragment);
@@ -72,29 +72,29 @@ export default class ShaderModule {
     return this.currentShaderProgram;
   }
 
-  private uniformLoc(GL: WebGLRenderingContext, name: string) {
+  private uniformLoc(GL: WebGL2RenderingContext, name: string) {
     return GL.getUniformLocation(this.currentShaderProgram as WebGLProgram, name);
   }
 
   //UNIFORMS
-  uniformInt(GL: WebGLRenderingContext, name: string, value: number) {
+  uniformInt(GL: WebGL2RenderingContext, name: string, value: number) {
     GL.uniform1i(this.uniformLoc(GL, name), value);
   }
-  uniformFloat(GL: WebGLRenderingContext, name: string, value: number) {
+  uniformFloat(GL: WebGL2RenderingContext, name: string, value: number) {
     GL.uniform1f(this.uniformLoc(GL, name), value);
   }
 
   //accepts Float32Array
-  uniformVec4(GL: WebGLRenderingContext, name: string, value: Float32Array) {
+  uniformVec4(GL: WebGL2RenderingContext, name: string, value: Float32Array) {
     GL.uniform4fv(this.uniformLoc(GL, name), value);
   }
-  uniformVec3(GL: WebGLRenderingContext, name: string, value: Float32Array) {
+  uniformVec3(GL: WebGL2RenderingContext, name: string, value: Float32Array) {
     GL.uniform3fv(this.uniformLoc(GL, name), value);
   }
-  uniformVec2(GL: WebGLRenderingContext, name: string, value: Float32Array) {
+  uniformVec2(GL: WebGL2RenderingContext, name: string, value: Float32Array) {
     GL.uniform2fv(this.uniformLoc(GL, name), value);
   }
-  uniformMat3(GL: WebGLRenderingContext, name: string, value: Float32Array) {
+  uniformMat3(GL: WebGL2RenderingContext, name: string, value: Float32Array) {
     GL.uniformMatrix3fv(this.uniformLoc(GL, name), false, value);
   }
 }
