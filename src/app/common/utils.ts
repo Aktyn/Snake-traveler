@@ -12,3 +12,7 @@ export function isWebGL2Available() {
     return false;
   }
 }
+
+export function mix(v1: number, v2: number, factor: number) {
+  return v1 * (1.0 - factor) + v2 * factor;
+}

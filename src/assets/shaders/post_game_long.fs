@@ -9,7 +9,6 @@ in lowp vec2 vUV;
 uniform sampler2D foreground_pass;
 uniform sampler2D background_pass;
 
-uniform float aspect;
 uniform vec3 camera;
 
 uniform vec2 offset;//normalized flipped resolution

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Renderer from './Renderer';
 import GUI from '../gui/GUI';
 import Core from '../game/core';
-import { onAssetsLoaded } from '../graphics/assets';
+import { onAssetsLoaded } from '../common/assets';
 import DebugInfo from './DebugInfo';
 import { isWebGL2Available } from '../common/utils';
 import SceneRenderer from '../game/sceneRenderer';

@@ -39,7 +39,7 @@ function stitchTextureObject(GL: WebGL2RenderingContext, texture: WebGLTexture):
   };
 }
 
-export default class TextureModule {
+const TextureModule = {
   createFrom(GL: WebGL2RenderingContext, image: ImageData | HTMLCanvasElement | HTMLImageElement, linear = true) {
     const texture = GL.createTexture();
     if (texture === null) throw new Error('Cannot create WebGLTexture');
@@ -69,7 +69,7 @@ export default class TextureModule {
     GL.bindTexture(GL.TEXTURE_2D, null);
 
     return stitchTextureObject(GL, texture);
-  }
+  },
 
   active(GL: WebGL2RenderingContext, number = 0) {
     GL.activeTexture(GL.TEXTURE0 + number);
@@ -78,4 +78,6 @@ export default class TextureModule {
   /*unbind: function() {
 		GL.bindTexture(GL.TEXTURE_2D, null);
 	}*/
-}
+};
+
+export default TextureModule;

@@ -1,24 +1,15 @@
 import FramebufferModule from './framebuffer';
-import TextureModule from './texture';
 import ShaderModule from './shader';
 import VBOModule from './vbo';
 
-//TODO: refactor
 function loadContext(canvas: HTMLCanvasElement) {
   const noSupportMessage = 'No WebGL support. You are not able to play in this browser.';
 
   let GL: WebGL2RenderingContext;
   try {
-    //premultipliedAlpha
     GL = canvas.getContext('webgl2', { antialias: false, alpha: false }) as WebGL2RenderingContext;
 
-    /*EXT = 	GL.getExtension('WEBGL_draw_buffers') ||
-				GL.getExtension("OES_draw_buffer") ||
-					GL.getExtension("MOZ_OES_draw_buffer") ||
-				GL.getExtension("WEBKIT_OES_draw_buffer");*/
     if (!GL) throw new Error(noSupportMessage);
-    //if(!EXT)
-    //	throw new Error('Browser does not support "draw buffers" webgl extension');
   } catch (e) {
     console.error(e);
 
@@ -41,7 +32,6 @@ export default class RendererBase {
   protected aspect = 1;
 
   protected framebufferModule = new FramebufferModule();
-  protected textureModule = new TextureModule();
   protected shaderModule = new ShaderModule();
   protected vboModule = new VBOModule(this.shaderModule);
 

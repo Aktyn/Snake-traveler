@@ -1,11 +1,13 @@
+import { Layers, Entity } from './entities';
 import { ExtendedShader } from '../graphics/shader';
 import { VBO_I } from '../graphics/vbo';
 import RendererBase from '../graphics/rendererBase';
-import Assets from '../graphics/assets';
+import Assets from '../common/assets';
 import WorldMap from './worldMap';
 import { ExtendedFramebuffer } from '../graphics/framebuffer';
 import { Palette } from '../common/colors';
 import Chunk from './chunk';
+import TextureModule from '../graphics/texture';
 
 const rectData = {
   vertex: [-1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1],
@@ -17,7 +19,6 @@ export default class SceneRenderer extends RendererBase {
   private readonly shaders: { post: ExtendedShader; main: ExtendedShader };
   private readonly framebuffers: { background: ExtendedFramebuffer; foreground: ExtendedFramebuffer };
 
-  private readonly cameraBuff = new Float32Array([0, 0, 1]); //TODO: make camera object
   private shadowVector: Float32Array | null = null;
 
   constructor() {
@@ -33,8 +34,8 @@ export default class SceneRenderer extends RendererBase {
       foreground: this.framebufferModule.create(this.GL, { fullscreen: true, linear: true })
     };
 
-    const rect = this.vboModule.create(this.GL, rectData);
-    this.VBO_RECT = rect;
+    this.VBO_RECT = this.vboModule.create(this.GL, rectData);
+
     this.updateShadowVector();
   }
 
@@ -53,16 +54,16 @@ export default class SceneRenderer extends RendererBase {
     this.updateShadowVector(w, h);
   }
 
-  private prepareSceneFramebuffer() {
+  private prepareSceneFramebuffer(map: WorldMap) {
     super.clear(0, 0, 0);
     this.shaders.main.bind();
     this.VBO_RECT.bind();
 
-    this.textureModule.active(this.GL, 0);
+    TextureModule.active(this.GL, 0);
     this.shaderModule.uniformInt(this.GL, 'sampler', 0);
 
     this.shaderModule.uniformFloat(this.GL, 'aspect', this.aspect);
-    this.shaderModule.uniformVec3(this.GL, 'camera', this.cameraBuff);
+    this.shaderModule.uniformVec3(this.GL, 'camera', map.camera.buffer);
   }
 
   private synchronizeChunkTextures(chunk: Chunk) {
@@ -72,19 +73,34 @@ export default class SceneRenderer extends RendererBase {
 
       if (!chunk.hasWebGLTexturesGenerated) {
         chunk.setTextures(
-          this.textureModule.createFrom(this.GL, chunk.canvases.background, true),
-          this.textureModule.createFrom(this.GL, chunk.canvases.foreground, true)
+          TextureModule.createFrom(this.GL, chunk.canvases.background, true),
+          TextureModule.createFrom(this.GL, chunk.canvases.foreground, true)
         );
       } else {
-        console.log('updating canvas texture');
         chunk.updateTexture();
+      }
+    }
+  }
+
+  private renderEntities(layer: { [_: string]: Entity }) {
+    for (const entityName in layer) {
+      if (!layer[entityName].objects.length) {
+        continue; //skip empty entity
+      }
+
+      layer[entityName].bindTexture(this.GL);
+
+      for (const object of layer[entityName].objects) {
+        this.shaderModule.uniformVec4(this.GL, 'color', object.color.buffer);
+        this.shaderModule.uniformMat3(this.GL, 'u_matrix', object.buffer);
+        this.VBO_RECT.draw();
       }
     }
   }
 
   private renderBackgroundPass(map: WorldMap) {
     this.framebuffers.background.renderToTexture();
-    this.prepareSceneFramebuffer();
+    this.prepareSceneFramebuffer(map);
     this.shaderModule.uniformVec4(this.GL, 'color', Palette.WHITE.buffer);
 
     for (const chunk of map.chunks) {
@@ -104,7 +120,7 @@ export default class SceneRenderer extends RendererBase {
 
   private renderForegroundPass(map: WorldMap) {
     this.framebuffers.foreground.renderToTexture();
-    this.prepareSceneFramebuffer();
+    this.prepareSceneFramebuffer(map);
     this.shaderModule.uniformVec4(this.GL, 'color', Palette.WHITE.buffer);
 
     for (const chunk of map.chunks) {
@@ -119,6 +135,9 @@ export default class SceneRenderer extends RendererBase {
       this.shaderModule.uniformMat3(this.GL, 'u_matrix', chunk.matrix.buffer);
       this.VBO_RECT.draw();
     }
+
+    this.renderEntities(map.entities.getLayer(Layers.FOREGROUND));
+
     this.framebuffers.foreground.stopRenderingToTexture();
   }
 
@@ -129,16 +148,16 @@ export default class SceneRenderer extends RendererBase {
     this.shaders.post.bind();
     this.VBO_RECT.bind();
 
-    this.textureModule.active(this.GL, 0);
+    TextureModule.active(this.GL, 0);
     this.shaderModule.uniformInt(this.GL, 'background_pass', 0);
     this.framebuffers.background.bindTexture();
 
-    this.textureModule.active(this.GL, 1);
+    TextureModule.active(this.GL, 1);
     this.shaderModule.uniformInt(this.GL, 'foreground_pass', 1);
     this.framebuffers.foreground.bindTexture();
 
     this.shadowVector && this.shaderModule.uniformVec2(this.GL, 'offset', this.shadowVector);
-    this.shaderModule.uniformVec3(this.GL, 'camera', this.cameraBuff);
+    this.shaderModule.uniformVec3(this.GL, 'camera', map.camera.buffer);
     this.shaderModule.uniformFloat(this.GL, 'aspect', this.aspect);
 
     this.VBO_RECT.draw();

@@ -80,8 +80,8 @@ export default class Core {
   }
 
   init() {
-    const randX = 0; //(Math.random() * (1 << 30)) | 0;
-    const randY = 0; //(Math.random() * (1 << 30)) | 0;
+    const randX = Math.random() * (1 << 16);
+    const randY = Math.random() * (1 << 16);
     this.map = new WorldMap(randX, randY);
     this.map.spawnPlayer(randX, randY);
 
