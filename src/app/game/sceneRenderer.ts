@@ -103,17 +103,19 @@ export default class SceneRenderer extends RendererBase {
     this.prepareSceneFramebuffer(map);
     this.shaderModule.uniformVec4(this.GL, 'color', Palette.WHITE.buffer);
 
-    for (const chunk of map.chunks) {
-      if (!chunk.isLoaded()) {
-        continue;
+    for (const column of map.chunks) {
+      for (const chunk of column) {
+        if (!chunk?.isLoaded()) {
+          continue;
+        }
+
+        this.synchronizeChunkTextures(chunk);
+
+        chunk.bindBackgroundTexture();
+
+        this.shaderModule.uniformMat3(this.GL, 'u_matrix', chunk.matrix.buffer);
+        this.VBO_RECT.draw();
       }
-
-      this.synchronizeChunkTextures(chunk);
-
-      chunk.bindBackgroundTexture();
-
-      this.shaderModule.uniformMat3(this.GL, 'u_matrix', chunk.matrix.buffer);
-      this.VBO_RECT.draw();
     }
     this.framebuffers.background.stopRenderingToTexture();
   }
@@ -123,17 +125,19 @@ export default class SceneRenderer extends RendererBase {
     this.prepareSceneFramebuffer(map);
     this.shaderModule.uniformVec4(this.GL, 'color', Palette.WHITE.buffer);
 
-    for (const chunk of map.chunks) {
-      if (!chunk.isLoaded()) {
-        continue;
+    for (const column of map.chunks) {
+      for (const chunk of column) {
+        if (!chunk?.isLoaded()) {
+          continue;
+        }
+
+        this.synchronizeChunkTextures(chunk);
+
+        chunk.bindForegroundTexture();
+
+        this.shaderModule.uniformMat3(this.GL, 'u_matrix', chunk.matrix.buffer);
+        this.VBO_RECT.draw();
       }
-
-      this.synchronizeChunkTextures(chunk);
-
-      chunk.bindForegroundTexture();
-
-      this.shaderModule.uniformMat3(this.GL, 'u_matrix', chunk.matrix.buffer);
-      this.VBO_RECT.draw();
     }
 
     this.renderEntities(map.entities.getLayer(Layers.FOREGROUND));

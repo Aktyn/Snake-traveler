@@ -3,6 +3,13 @@ import * as SimplexNoise from 'simplex-noise';
 const simplex = new SimplexNoise('mgdlnkczmr');
 
 const normalizeNoise = (x: number, y: number) => (simplex.noise2D(x, y) + 1.0) / 2.0;
+const normalizedNoisesSum = (x: number, y: number, noises: number) => {
+  let noise = 0;
+  for (let i = 1; i <= noises; i++) {
+    noise += simplex.noise2D(x * i, y * i) + 1.0;
+  }
+  return noise / 2 / noises;
+};
 
 const Generator = {
   /** params should be integers */ //TODO: this function takes about 30ms, it can be optimized by running multiple threads
@@ -17,10 +24,10 @@ const Generator = {
 
     function getBiome(xx: number, yy: number, samples: number, scale: number) {
       let b = 0;
-      for (let i = 0; i < samples; i++) {
-        b += normalizeNoise((scale * xx) / 2 ** i, (scale * yy) / 2 ** i);
+      for (let i = 1; i <= samples; i++) {
+        b += normalizeNoise((scale * xx) / i, (scale * yy) / i);
       }
-      return (b / samples) * biomes; // | 0;
+      return Math.pow(b / samples, 2) * biomes; // | 0;
     }
 
     //TODO: add stringified json with other data to this buffer
@@ -32,9 +39,9 @@ const Generator = {
 
         const xx = (x + _x) / (chunkSize * 2);
         const yy = (y + _y) / (chunkSize * 2);
-        const noise = normalizeNoise(xx, yy);
+        const noise = normalizedNoisesSum(xx / 3, yy / 3, 3);
 
-        data[index] = noise < 0.5 ? getBiome(xx, yy, 8, 0.1) : -getBiome(xx, yy, 8, 0.05); //negative number indicates wall
+        data[index] = noise < 0.5 ? getBiome(xx, yy, 6, 0.1) : -getBiome(xx, yy, 4, 0.05); //negative number indicates wall
       }
     }
 

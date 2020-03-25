@@ -12,6 +12,7 @@ import { registerDebugger } from '../debugger';
 
 function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const [debugText, setDebugText] = useState<string[]>([]);
   const [renderer, setRenderer] = useState<RendererBase | null>(null);
   const [, setCore] = useState<Core | null>(null);
@@ -26,7 +27,7 @@ function App() {
       const core = new Core(renderer);
       setCore(core);
 
-      core.init();
+      core.init(() => setMapLoaded(true));
       registerDebugger(setDebugText);
       setAssetsLoaded(true);
     });
@@ -38,7 +39,7 @@ function App() {
   }
 
   if (!assetsLoaded) {
-    return <div>LOADING</div>; //TODO: full-page loading spinner
+    return <div>LOADING ASSETS</div>; //TODO: full-page loading spinner
   }
 
   return (
@@ -46,6 +47,19 @@ function App() {
       {renderer && <Renderer renderer={renderer} />}
       <GUI />
       <DebugInfo content={debugText} />
+      {!mapLoaded && (
+        <div
+          className="fullscreen"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0003'
+          }}
+        >
+          GENERATING MAP
+        </div>
+      )}
     </div>
   );
 }

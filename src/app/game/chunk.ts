@@ -6,8 +6,9 @@ import { mix } from '../common/utils';
 
 const loadingChunks: Set<Chunk> = new Set();
 
-const postGenerateQueue = (() => {
+export const postGenerateQueue = (() => {
   const registeredChunks: Chunk[] = [];
+  const registeredBatchLoadCallbacks: Function[] = [];
   let generateTimeout: NodeJS.Timeout | null = null;
 
   function setQueueTimeout() {
@@ -21,6 +22,10 @@ const postGenerateQueue = (() => {
           registeredChunks.shift()?.postGenerate();
           setQueueTimeout();
         }, 1000 / 30);
+      } else {
+        //console.log('chunks batch fully generated');
+        registeredBatchLoadCallbacks.forEach(cb => cb());
+        registeredBatchLoadCallbacks.length = 0;
       }
 
       return;
@@ -30,11 +35,14 @@ const postGenerateQueue = (() => {
   }
 
   return {
-    registerChunk: (chunk: Chunk) => {
+    registerChunk(chunk: Chunk) {
       registeredChunks.push(chunk);
       loadingChunks.delete(chunk);
 
       setQueueTimeout();
+    },
+    registerBatchLoad(callback: Function) {
+      registeredBatchLoadCallbacks.push(callback);
     }
   };
 })();
@@ -46,10 +54,13 @@ const prepareCanvas = () => {
 };
 
 export default class Chunk extends Vec2 {
-  public static RESOLUTION = 256;
-  public static SIZE = Chunk.RESOLUTION / 1024;
+  public static readonly RESOLUTION = 256;
+  public static readonly SIZE = Chunk.RESOLUTION / 1024;
 
-  //objects: ObjectBase[] = [];
+  public static get loadingChunks() {
+    return loadingChunks.size;
+  }
+
   private loaded = false;
   private data: Float32Array | null = null;
   private _matrix: Matrix2D;
@@ -65,18 +76,17 @@ export default class Chunk extends Vec2 {
   constructor(x: number, y: number) {
     super(x, y);
     this._matrix = new Matrix2D();
-    this._matrix.setPos((x / Chunk.RESOLUTION) * Chunk.SIZE * 2, (-y / Chunk.RESOLUTION) * Chunk.SIZE * 2);
+    this._matrix.setPos(x * Chunk.SIZE * 2, -y * Chunk.SIZE * 2);
     this._matrix.setScale(Chunk.SIZE, Chunk.SIZE);
 
     loadingChunks.add(this);
   }
 
   destroy() {
-    //this.objects.forEach(obj => obj.destroy());
-    //this.objects = [];
     this._webglTextureB?.destroy();
     this._webglTextureF?.destroy();
     loadingChunks.delete(this);
+    this.loaded = false;
   }
 
   get matrix() {
@@ -126,7 +136,7 @@ export default class Chunk extends Vec2 {
   }
 
   public postGenerate() {
-    if (!this.data) {
+    if (!this.data || !this.loaded) {
       return;
     }
 
@@ -207,9 +217,9 @@ export default class Chunk extends Vec2 {
   }
 
   static clampPos(x: number, y: number) {
-    const xInt = ((x * Chunk.RESOLUTION) / Chunk.SIZE / 2) | 0;
-    const yInt = ((y * Chunk.RESOLUTION) / Chunk.SIZE / 2) | 0;
+    const xInt = (x / Chunk.SIZE / 2) | 0;
+    const yInt = (y / Chunk.SIZE / 2) | 0;
 
-    return new Vec2(xInt - (xInt % Chunk.RESOLUTION), yInt - (yInt % Chunk.RESOLUTION));
+    return new Vec2(xInt, yInt);
   }
 }

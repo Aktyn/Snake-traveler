@@ -45,6 +45,14 @@ export default class Core {
       case 'ARROWRIGHT':
         (this.map?.getTargetPlayer()?.steering || ({} as any)).right = pressed;
         break;
+      case 'W':
+      case 'ARROWUP':
+        (this.map?.getTargetPlayer()?.steering || ({} as any)).up = pressed;
+        break;
+      case 'S':
+      case 'ARROWDOWN':
+        (this.map?.getTargetPlayer()?.steering || ({} as any)).down = pressed;
+        break;
     }
   }
 
@@ -79,11 +87,13 @@ export default class Core {
     tick(0);
   }
 
-  init() {
-    const randX = Math.random() * (1 << 16);
-    const randY = Math.random() * (1 << 16);
-    this.map = new WorldMap(randX, randY);
-    this.map.spawnPlayer(randX, randY);
+  init(onMapFullyLoaded?: Function) {
+    const randX = (Math.random() * 2.0 - 1.0) * (1 << 8);
+    const randY = (Math.random() * 2.0 - 1.0) * (1 << 8);
+    this.map = new WorldMap(randX, randY, (map: WorldMap) => {
+      map.spawnPlayer(map.getCenter());
+      onMapFullyLoaded?.();
+    });
 
     this.startUpdateLoop();
     this.initControls();

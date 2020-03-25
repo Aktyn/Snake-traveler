@@ -3,9 +3,12 @@ import { Updatable } from './updatable';
 import { debugLine } from '../debugger';
 import Entities from './entities';
 
+const MAX_PLAYER_SPEED = 0.33;
+const ACCELERATION = MAX_PLAYER_SPEED; //speed to maximum in a second
+
 export default class Player extends ObjectBase implements Updatable {
   private static readonly entityName = 'playerSegment';
-  private speed = 0.33;
+  private speed = 0;
   private rotationSpeed = Math.PI;
 
   constructor(x: number, y: number, entities: Entities) {
@@ -21,10 +24,18 @@ export default class Player extends ObjectBase implements Updatable {
 
   steering = {
     left: false,
-    right: false
+    right: false,
+    up: false,
+    down: false
   };
 
   update(delta: number) {
+    if (this.steering.up) {
+      this.speed = Math.min(MAX_PLAYER_SPEED, this.speed + delta * ACCELERATION);
+    }
+    if (this.steering.down) {
+      this.speed = Math.max(0, this.speed - delta * ACCELERATION);
+    }
     if (this.steering.left) {
       this.rot -= delta * this.rotationSpeed;
     }
