@@ -57,6 +57,10 @@ export default class Chunk extends Vec2 {
   public static readonly RESOLUTION = 256;
   public static readonly SIZE = Chunk.RESOLUTION / 1024;
 
+  //the number of chunks loaded in each direction from camera center
+  public static readonly GRID_SIZE_Y = 1; //(0.5 / Chunk.SIZE + 4) | 0;
+  public static readonly GRID_SIZE_X = Chunk.GRID_SIZE_Y * 2; // - 4;
+
   public static get loadingChunks() {
     return loadingChunks.size;
   }
@@ -70,6 +74,8 @@ export default class Chunk extends Vec2 {
     background: prepareCanvas(),
     foreground: prepareCanvas()
   };
+  private backgroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
+  private foregroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
 
   public needTextureUpdate = false;
 
@@ -85,6 +91,9 @@ export default class Chunk extends Vec2 {
   destroy() {
     this._webglTextureB?.destroy();
     this._webglTextureF?.destroy();
+    this.data = null;
+    this.canvases.background.remove();
+    this.canvases.foreground.remove();
     loadingChunks.delete(this);
     this.loaded = false;
   }
@@ -97,6 +106,21 @@ export default class Chunk extends Vec2 {
     return Boolean(this._webglTextureB && this._webglTextureF);
   }
 
+  /*getForegroundPixelColor(pX: number, pY: number, buffer: Uint8Array) {
+    buffer[3] = 0;
+  }*/
+
+  /**
+   * @param pX it should be float in range [0, 1]
+   * @param pY it should be float in range [0, 1]
+   */
+  getForegroundPixelAlpha(pX: number, pY: number) {
+    const iX = (pX * Chunk.RESOLUTION) | 0;
+    const iY = (pY * Chunk.RESOLUTION) | 0;
+    const index = iX + iY * Chunk.RESOLUTION;
+    return this.foregroundImgData.data[index * 4 + 3]; //return alpha channel value
+  }
+
   bindForegroundTexture() {
     this._webglTextureF?.bind();
   }
@@ -105,28 +129,25 @@ export default class Chunk extends Vec2 {
     this._webglTextureB?.bind();
   }
 
-  private static setImageDataToCanvas(canvas: HTMLCanvasElement, data: ImageData) {
-    canvas.getContext('2d', { alpha: false })?.putImageData(data, 0, 0);
+  private updateCanvases() {
+    this.canvases.background.getContext('2d', { alpha: false })?.putImageData(this.backgroundImgData, 0, 0);
+    this.canvases.foreground.getContext('2d', { alpha: false })?.putImageData(this.foregroundImgData, 0, 0);
   }
 
   setData(buffer: ArrayBuffer) {
     this.data = new Float32Array(buffer);
 
-    const backgroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
-    const foregroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
-
     for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
       for (let c = 0; c < 3; c++) {
-        backgroundImgData.data[i * 4 + c] = 128;
-        foregroundImgData.data[i * 4 + c] = 255;
+        this.backgroundImgData.data[i * 4 + c] = 128;
+        this.foregroundImgData.data[i * 4 + c] = 255;
       }
 
-      backgroundImgData.data[i * 4 + 3] = 255;
-      foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
+      this.backgroundImgData.data[i * 4 + 3] = 255;
+      this.foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
     }
 
-    Chunk.setImageDataToCanvas(this.canvases.background, backgroundImgData);
-    Chunk.setImageDataToCanvas(this.canvases.foreground, foregroundImgData);
+    this.updateCanvases();
 
     this.needTextureUpdate = true;
     this.loaded = true;
@@ -140,9 +161,6 @@ export default class Chunk extends Vec2 {
       return;
     }
 
-    const backgroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
-    const foregroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
-
     for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
       //foreground data (wall color can be set here (according to biome))
       const value = Math.abs(this.data[i]);
@@ -152,14 +170,14 @@ export default class Chunk extends Vec2 {
 
       for (let c = 0; c < 3; c++) {
         //mixedBackground.byteBuffer[c];
-        backgroundImgData.data[i * 4 + c] =
+        this.backgroundImgData.data[i * 4 + c] =
           (mix(Biomes[biome].background.buffer[c], Biomes[nextBiome].background.buffer[c], mixFactor) * 255) | 0;
-        foregroundImgData.data[i * 4 + c] =
+        this.foregroundImgData.data[i * 4 + c] =
           (mix(Biomes[biome].foreground.buffer[c], Biomes[nextBiome].foreground.buffer[c], mixFactor) * 255) | 0;
       }
 
-      backgroundImgData.data[i * 4 + 3] = 255; //this.data[i] < 0 ? 255 : 0; //this.data[i] & 0x80 ? 255 : 0; //255;
-      foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
+      this.backgroundImgData.data[i * 4 + 3] = 255; //this.data[i] < 0 ? 255 : 0; //this.data[i] & 0x80 ? 255 : 0; //255;
+      this.foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
     }
 
     //little blur for foreground texture
@@ -194,8 +212,7 @@ export default class Chunk extends Vec2 {
       }
     }*/
 
-    Chunk.setImageDataToCanvas(this.canvases.background, backgroundImgData);
-    Chunk.setImageDataToCanvas(this.canvases.foreground, foregroundImgData);
+    this.updateCanvases();
 
     this.needTextureUpdate = true;
   }

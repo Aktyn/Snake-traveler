@@ -1,5 +1,11 @@
 import * as SimplexNoise from 'simplex-noise';
 
+/*const alphabet = 'abcdefghijklmnopqrtuvwxyz';
+const randomSeed = new Array(16)
+  .fill(0)
+  .map(() => alphabet[(alphabet.length * Math.random()) | 0])
+  .join('');
+console.log('Random seed generated:', randomSeed);*/
 const simplex = new SimplexNoise('mgdlnkczmr');
 
 const normalizeNoise = (x: number, y: number) => (simplex.noise2D(x, y) + 1.0) / 2.0;

@@ -88,9 +88,7 @@ export default class Core {
   }
 
   init(onMapFullyLoaded?: Function) {
-    const randX = (Math.random() * 2.0 - 1.0) * (1 << 8);
-    const randY = (Math.random() * 2.0 - 1.0) * (1 << 8);
-    this.map = new WorldMap(randX, randY, (map: WorldMap) => {
+    this.map = new WorldMap(0, 0, (map: WorldMap) => {
       map.spawnPlayer(map.getCenter());
       onMapFullyLoaded?.();
     });

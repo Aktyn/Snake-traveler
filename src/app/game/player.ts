@@ -1,18 +1,20 @@
-import ObjectBase from './objectBase';
+import { SensorShapes } from './../physics/sensor';
 import { Updatable } from './updatable';
 import { debugLine } from '../debugger';
 import Entities from './entities';
+import DynamicObject from './dynamicObject';
 
 const MAX_PLAYER_SPEED = 0.33;
 const ACCELERATION = MAX_PLAYER_SPEED; //speed to maximum in a second
 
-export default class Player extends ObjectBase implements Updatable {
+export default class Player extends DynamicObject implements Updatable {
   private static readonly entityName = 'playerSegment';
+
   private speed = 0;
   private rotationSpeed = Math.PI;
 
   constructor(x: number, y: number, entities: Entities) {
-    super(x, y, 1, 1, entities);
+    super(x, y, 1, 1, entities, SensorShapes.CIRCLE);
     super.setScale(0.05, 0.05);
 
     this.entities.addObject(Player.entityName, this);

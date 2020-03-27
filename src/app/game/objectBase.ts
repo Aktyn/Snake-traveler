@@ -9,6 +9,7 @@ export default abstract class ObjectBase extends Matrix2D {
   constructor(x: number, y: number, width: number, height: number, entities: Entities) {
     super();
     super.setPos(x, y);
+    super.setScale(width, height);
     this.entities = entities;
   }
 

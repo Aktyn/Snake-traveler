@@ -6,15 +6,13 @@ import Vec2 from '../common/math/vec2';
 import Player from './player';
 import Entities from './entities';
 import { debugLine } from '../debugger';
-
-//the number of chunks loaded in each direction from camera center
-const CHUNKS_DISTANCE_Y = (0.5 / Chunk.SIZE + 2) | 0;
-const CHUNKS_DISTANCE_X = CHUNKS_DISTANCE_Y * 2;
+import CollisionDetector from './collisionDetector';
+import DynamicObject from './dynamicObject';
 
 const getEmptyChunksGrid = (): Chunk[][] =>
-  new Array(CHUNKS_DISTANCE_X * 2 + 1).fill(null).map(col => new Array(CHUNKS_DISTANCE_Y * 2 + 1).fill(null));
+  new Array(Chunk.GRID_SIZE_X * 2 + 1).fill(null).map(col => new Array(Chunk.GRID_SIZE_Y * 2 + 1).fill(null));
 
-export default class WorldMap implements Updatable {
+export default class WorldMap extends CollisionDetector implements Updatable {
   public readonly entities: Entities;
 
   private cam: Camera;
@@ -24,8 +22,10 @@ export default class WorldMap implements Updatable {
   private chunksGrid: Chunk[][] = getEmptyChunksGrid();
 
   private objects: Updatable[] = [];
+  private dynamicObjects: DynamicObject[] = [];
 
   constructor(startX = 0, startY = 0, onLoad: (map: WorldMap) => void) {
+    super();
     this.entities = new Entities();
     postGenerateQueue.registerBatchLoad(() => onLoad(this));
 
@@ -47,11 +47,11 @@ export default class WorldMap implements Updatable {
   }
 
   get chunksGridLeft() {
-    return this.centerChunkPos.x - CHUNKS_DISTANCE_X;
+    return this.centerChunkPos.x - Chunk.GRID_SIZE_X;
   }
 
   get chunksGridBottom() {
-    return this.centerChunkPos.y - CHUNKS_DISTANCE_Y;
+    return this.centerChunkPos.y - Chunk.GRID_SIZE_Y;
   }
 
   get camera() {
@@ -75,8 +75,8 @@ export default class WorldMap implements Updatable {
     }*/
 
     //new method of loading (load chunks from center spirally)
-    let x = CHUNKS_DISTANCE_X;
-    let y = CHUNKS_DISTANCE_Y;
+    let x = Chunk.GRID_SIZE_X;
+    let y = Chunk.GRID_SIZE_Y;
 
     let x_step = 1;
     let y_step = 1;
@@ -85,10 +85,10 @@ export default class WorldMap implements Updatable {
     let dirY = -1;
 
     while (true) {
-      const withinYBounds = y >= 0 && y < CHUNKS_DISTANCE_Y * 2 + 1;
+      const withinYBounds = y >= 0 && y < Chunk.GRID_SIZE_Y * 2 + 1;
       if (withinYBounds) {
         for (let xx = 0; xx < x_step; xx++) {
-          if (x >= 0 && x < CHUNKS_DISTANCE_X * 2 + 1) {
+          if (x >= 0 && x < Chunk.GRID_SIZE_X * 2 + 1) {
             this.chunksGrid[x][y] = this.loadChunkAsync(left + x, bottom + y);
           }
           x += dirX;
@@ -97,10 +97,10 @@ export default class WorldMap implements Updatable {
         x += dirX * x_step;
       }
 
-      const withinXBounds = x >= 0 && x < CHUNKS_DISTANCE_X * 2 + 1;
+      const withinXBounds = x >= 0 && x < Chunk.GRID_SIZE_X * 2 + 1;
       if (withinXBounds) {
         for (let yy = 0; yy < y_step; yy++) {
-          if (y >= 0 && y < CHUNKS_DISTANCE_Y * 2 + 1) {
+          if (y >= 0 && y < Chunk.GRID_SIZE_Y * 2 + 1) {
             this.chunksGrid[x][y] = this.loadChunkAsync(left + x, bottom + y);
           }
           y += dirY;
@@ -109,7 +109,7 @@ export default class WorldMap implements Updatable {
         y += dirY * y_step;
       }
 
-      if (!withinXBounds && !(y >= 0 && y <= CHUNKS_DISTANCE_Y * 2 + 1)) {
+      if (!withinXBounds && !(y >= 0 && y <= Chunk.GRID_SIZE_Y * 2 + 1)) {
         break;
       }
 
@@ -121,30 +121,6 @@ export default class WorldMap implements Updatable {
     }
   }
 
-  /*private loadChunksColumn(x: number) {
-    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.RESOLUTION) {
-      this.loadChunkAsync(x, y).catch(() => {});
-    }
-  }
-
-  private unloadChunksColumn(x: number) {
-    for (let y = this.chunksBounds.bottom; y <= this.chunksBounds.top; y += Chunk.RESOLUTION) {
-      this.unloadChunk(x, y);
-    }
-  }
-
-  private loadChunksRow(y: number) {
-    for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.RESOLUTION) {
-      this.loadChunkAsync(x, y).catch(() => {});
-    }
-  }
-
-  private unloadChunksRow(y: number) {
-    for (let x = this.chunksBounds.left; x <= this.chunksBounds.right; x += Chunk.RESOLUTION) {
-      this.unloadChunk(x, y);
-    }
-  }*/
-
   private loadChunkAsync(x: number, y: number) {
     const chunk = new Chunk(x, y);
 
@@ -152,20 +128,10 @@ export default class WorldMap implements Updatable {
       .then(chunkData => chunk.setData(chunkData))
       .catch(e => {
         chunk.destroy();
-        //const index = this.chunksGrid.indexOf(chunk);
-        //this.chunksGrid.splice(index);
       });
 
     return chunk;
   }
-
-  /*private unloadChunk(x: number, y: number) {
-    const chunkIndex = this.chunksGrid.findIndex(chunk => chunk.x === x && chunk.y === y);
-    if (chunkIndex !== -1) {
-      this.chunksGrid[chunkIndex].destroy();
-      this.chunksGrid.splice(chunkIndex, 1);
-    }
-  }*/
 
   private moveGrid(dirX: 1 | -1 | 0, dirY: 1 | -1 | 0) {
     const left = this.chunksGridLeft;
@@ -173,7 +139,7 @@ export default class WorldMap implements Updatable {
 
     if (dirX === -1) {
       this.chunksGrid.pop()?.forEach(chunk => chunk.destroy()); //unload and remove right column
-      const leftCol = new Array(CHUNKS_DISTANCE_Y * 2 + 1).fill(null).map((_, y) => {
+      const leftCol = new Array(Chunk.GRID_SIZE_Y * 2 + 1).fill(null).map((_, y) => {
         return this.loadChunkAsync(left - 1, bottom + y);
       });
       this.chunksGrid.unshift(leftCol); //add new column to the left side
@@ -181,8 +147,8 @@ export default class WorldMap implements Updatable {
 
     if (dirX === 1) {
       this.chunksGrid.shift()?.forEach(chunk => chunk.destroy()); //unload and remove left column
-      const rightCol = new Array(CHUNKS_DISTANCE_Y * 2 + 1).fill(null).map((_, y) => {
-        return this.loadChunkAsync(this.centerChunkPos.x + CHUNKS_DISTANCE_X, bottom + y);
+      const rightCol = new Array(Chunk.GRID_SIZE_Y * 2 + 1).fill(null).map((_, y) => {
+        return this.loadChunkAsync(this.centerChunkPos.x + Chunk.GRID_SIZE_X + 1, bottom + y);
       });
       this.chunksGrid.push(rightCol); //add new column to the right side
     }
@@ -198,12 +164,12 @@ export default class WorldMap implements Updatable {
     if (dirY === 1) {
       this.chunksGrid.forEach((column, x) => {
         column.shift()?.destroy(); //unload bottom row
-        const chunk = this.loadChunkAsync(left + x, this.centerChunkPos.y + CHUNKS_DISTANCE_Y); //load top row
+        const chunk = this.loadChunkAsync(left + x, this.centerChunkPos.y + Chunk.GRID_SIZE_Y + 1); //load top row
         column.push(chunk);
       });
     }
 
-    this.centerChunkPos.addXY(dirX, dirY);
+    this.centerChunkPos.add(dirX, dirY);
   }
 
   getCamera() {
@@ -231,12 +197,22 @@ export default class WorldMap implements Updatable {
 
   addObject(object: Updatable) {
     this.objects.push(object);
+
+    if (object instanceof DynamicObject) {
+      this.dynamicObjects.push(object);
+    }
+  }
+
+  onPainterCollision(object: DynamicObject): void {
+    //if object is not a ghost and reacts with walls bouncing from them
+    const bounceVector = super.bounceOutOfColor(object, this.chunks, this.centerChunkPos);
+    console.log('Object collided', bounceVector?.x, bounceVector?.y);
   }
 
   private updateChunks() {
     if (!this.targetPlayer) return;
 
-    const playerChunkPos = Chunk.clampPos(this.targetPlayer.x + Chunk.SIZE, -this.targetPlayer.y - Chunk.SIZE);
+    const playerChunkPos = Chunk.clampPos(this.targetPlayer.x + Chunk.SIZE, -this.targetPlayer.y + Chunk.SIZE);
 
     while (playerChunkPos.x < this.centerChunkPos.x) {
       this.moveGrid(-1, 0);
@@ -267,6 +243,10 @@ export default class WorldMap implements Updatable {
       this.updateChunks();
     }
 
+    super.detectCollisions(this.dynamicObjects, this.chunksGrid, this.centerChunkPos);
+
     debugLine(`Loading chunks: ${Chunk.loadingChunks}`);
+    debugLine(`Updatable objects: ${this.objects.length}`);
+    debugLine(`Dynamic objects: ${this.dynamicObjects.length}`);
   }
 }

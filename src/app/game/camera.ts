@@ -11,7 +11,7 @@ export default class Camera extends Vec2 implements Updatable {
 
   constructor(x: number, y: number) {
     super(x, y);
-    this.visiblePos.setXY(x, y);
+    this.visiblePos.set(x, y);
   }
 
   private updateBuffer() {
@@ -22,14 +22,14 @@ export default class Camera extends Vec2 implements Updatable {
   zoom(factor: number) {}
 
   follow(target: ObjectBase | Vec2) {
-    super.setXY(target.x, target.y);
+    super.set(target.x, target.y);
   }
 
   update(delta: number) {
     const diffX = this.x - this.visiblePos.x;
     const diffY = this.y - this.visiblePos.y;
     if (Math.abs(diffX) > DIFF_TOLERANCE || Math.abs(diffY) > DIFF_TOLERANCE) {
-      this.visiblePos.addXY(diffX * delta * POSITION_SPEED, diffY * delta * POSITION_SPEED);
+      this.visiblePos.add(diffX * delta * POSITION_SPEED, diffY * delta * POSITION_SPEED);
     }
 
     this.updateBuffer();
