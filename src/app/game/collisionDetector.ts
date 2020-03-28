@@ -31,7 +31,7 @@ const PUSH_STEPS = 4;
 const RAY_STEPS = 3;
 const RAYS = 32;
 const ANGLE_SHIFT = (Math.PI * 2.0) / RAYS;
-const COLLISION_PUSH_FACTOR = 0.01;
+const COLLISION_PUSH_FACTOR = 0.002;
 
 function getBounceVec(object: DynamicObject, chunks: Chunk[][], centerChunkPos: Vec2, outVec?: Vec2) {
   b_radius = object.width;
@@ -70,7 +70,7 @@ function getPixelAlpha(x: number, y: number, chunks: Chunk[][], centerChunkPos: 
   const chunkX = ((x - left) / (Chunk.SIZE * 2)) | 0;
   const chunkY = (-(y - bottom) / (Chunk.SIZE * 2)) | 0;
 
-  const chunk = chunks[chunkX][chunkY];
+  const chunk = chunks[chunkX]?.[chunkY];
 
   if (!chunk || !chunk.isLoaded()) {
     return 255; //simulate collision behavior on chunk that is not loaded

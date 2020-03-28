@@ -117,6 +117,8 @@ export default class SceneRenderer extends RendererBase {
         this.VBO_RECT.draw();
       }
     }
+    this.renderEntities(map.entities.getLayer(Layers.BACKGROUND));
+
     this.framebuffers.background.stopRenderingToTexture();
   }
 
@@ -139,7 +141,6 @@ export default class SceneRenderer extends RendererBase {
         this.VBO_RECT.draw();
       }
     }
-
     this.renderEntities(map.entities.getLayer(Layers.FOREGROUND));
 
     this.framebuffers.foreground.stopRenderingToTexture();

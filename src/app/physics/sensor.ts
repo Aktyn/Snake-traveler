@@ -30,7 +30,6 @@ export const SensorShapes = {
     [-1.0, -0.5],
     [1.0, -0.5]
   ],
-
   ROCKET: [
     [0.0, 1.0],
     [-1.0, -0.9],
@@ -38,18 +37,27 @@ export const SensorShapes = {
     [-0.5, 0.5],
     [0.5, 0.5]
   ],*/
+
   CIRCLE: new Array(8).fill(0).map((_, index, arr) => {
     const a = Math.PI * 2.0 * (index / arr.length) + Math.PI / 2;
     return [Math.cos(a), Math.sin(a)].map(v => (Math.abs(v) < 1e-10 ? 0 : v));
-  })
-  /*BULLET: [
+  }),
+  PLAYER: [
+    [0.0, 1.0],
+    [0.5, 0.5],
+    [0.5, -0.5],
+    [0.0, -1.0],
+    [-0.5, -0.5],
+    [-0.5, 0.5]
+  ],
+  BULLET: [
     [0.0, 1.0],
     [0.0, -1.0],
     [-0.5, 0.5],
     [0.5, 0.5],
     [-0.5, -0.5],
     [0.5, -0.5]
-  ]*/
+  ]
 };
 
 export default class Sensor {

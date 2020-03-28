@@ -6,7 +6,7 @@ const randomSeed = new Array(16)
   .map(() => alphabet[(alphabet.length * Math.random()) | 0])
   .join('');
 console.log('Random seed generated:', randomSeed);*/
-const simplex = new SimplexNoise('mgdlnkczmr');
+const simplex = new SimplexNoise('mgdlnkczmr_zyxwvutrqponmlkjihgfedcba');
 
 const normalizeNoise = (x: number, y: number) => (simplex.noise2D(x, y) + 1.0) / 2.0;
 const normalizedNoisesSum = (x: number, y: number, noises: number) => {
@@ -47,7 +47,7 @@ const Generator = {
         const yy = (y + _y) / (chunkSize * 2);
         const noise = normalizedNoisesSum(xx / 3, yy / 3, 3);
 
-        data[index] = noise < 0.5 ? getBiome(xx, yy, 6, 0.1) : -getBiome(xx, yy, 4, 0.05); //negative number indicates wall
+        data[index] = noise < 0.5 ? getBiome(xx, yy, 5, 0.1) : -getBiome(xx, yy, 4, 0.05); //negative number indicates wall
       }
     }
 

@@ -53,6 +53,9 @@ export default class Core {
       case 'ARROWDOWN':
         (this.map?.getTargetPlayer()?.steering || ({} as any)).down = pressed;
         break;
+      case ' ': //spacebar
+        (this.map?.getTargetPlayer()?.steering || ({} as any)).shooting = pressed;
+        break;
     }
   }
 

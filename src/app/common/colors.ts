@@ -1,17 +1,49 @@
 const toHexString = (number: number) => '#' + ('000000' + number.toString(16)).substr(-6);
 
-export interface ColorI {
+/*export interface ColorI {
   byteBuffer: Uint8ClampedArray;
   buffer: Float32Array;
   hex: string;
+}*/
+
+export class Color {
+  readonly byteBuffer: Uint8ClampedArray;
+  readonly buffer: Float32Array;
+  readonly hex: string;
+
+  constructor(r: number, g: number, b: number, alpha = 1) {
+    this.byteBuffer = new Uint8ClampedArray([r, g, b]);
+    this.buffer = new Float32Array([r / 255, g / 255, b / 255, alpha]);
+    this.hex = toHexString((r << 16) | (g << 8) | (b << 0));
+  }
+
+  get r() {
+    return this.byteBuffer[0];
+  }
+
+  get g() {
+    return this.byteBuffer[1];
+  }
+
+  get b() {
+    return this.byteBuffer[2];
+  }
+
+  get alpha() {
+    return this.buffer[3];
+  }
+
+  set alpha(value: number) {
+    this.buffer[3] = value;
+  }
+
+  clone() {
+    return new Color(this.r, this.g, this.b);
+  }
 }
 
-function rgb(r: number, g: number, b: number): ColorI {
-  return {
-    byteBuffer: new Uint8ClampedArray([r, g, b]),
-    buffer: new Float32Array([r / 255, g / 255, b / 255, 1]),
-    hex: toHexString((r << 16) | (g << 8) | (b << 0))
-  };
+function rgb(r: number, g: number, b: number): Color {
+  return new Color(r, g, b);
 }
 
 /*export function mixColors(color1: ColorI, color2: ColorI, factor: number) {
@@ -24,8 +56,9 @@ function rgb(r: number, g: number, b: number): ColorI {
 
 export const Palette = {
   WHITE: rgb(255, 255, 255),
-  BLACK: rgb(0, 0, 0)
-  //WALLS: rgb(129, 212, 250)
+  BLACK: rgb(0, 0, 0),
+  PLAYER: rgb(239, 83, 80),
+  BULLET: rgb(255, 171, 145)
 };
 
 export const Biomes = [

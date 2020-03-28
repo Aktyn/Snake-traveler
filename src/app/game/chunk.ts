@@ -58,8 +58,8 @@ export default class Chunk extends Vec2 {
   public static readonly SIZE = Chunk.RESOLUTION / 1024;
 
   //the number of chunks loaded in each direction from camera center
-  public static readonly GRID_SIZE_Y = 1; //(0.5 / Chunk.SIZE + 4) | 0;
-  public static readonly GRID_SIZE_X = Chunk.GRID_SIZE_Y * 2; // - 4;
+  public static readonly GRID_SIZE_Y = 3; //(0.5 / Chunk.SIZE + 4) | 0;
+  public static readonly GRID_SIZE_X = 4; //Chunk.GRID_SIZE_Y * 2 - 4;
 
   public static get loadingChunks() {
     return loadingChunks.size;

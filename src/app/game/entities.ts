@@ -10,15 +10,31 @@ export enum Layers {
 
 const DEFAULT_TEXTURE_FILTERING = true;
 
+interface Schema {
+  layer: Layers;
+  texture: string;
+  linear?: boolean;
+}
+
 const Predefined = {
+  doubleGun: {
+    layer: Layers.FOREGROUND,
+    texture: 'double_gun.png'
+  },
+  bullet: {
+    layer: Layers.FOREGROUND,
+    texture: 'bullet.png'
+  },
+  player: {
+    layer: Layers.FOREGROUND,
+    texture: 'player.png'
+  },
   playerSegment: {
     layer: Layers.FOREGROUND,
-    texture: 'player.png',
-    linear: true //texture filtering
+    texture: 'player_segment.png'
   }
 };
 
-type Schema = typeof Predefined[keyof typeof Predefined];
 type EntityName = keyof typeof Predefined;
 
 export class Entity {

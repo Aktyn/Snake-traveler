@@ -10,6 +10,10 @@ export default abstract class DynamicObject extends ObjectBase {
     this._sensor = new Sensor(shape);
   }
 
+  moveForward(speed: number) {
+    super.move(Math.cos(this.fixedRot) * speed, Math.sin(this.fixedRot) * speed);
+  }
+
   get sensor() {
     return this._sensor;
   }

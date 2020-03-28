@@ -8,6 +8,8 @@ import Entities from './entities';
 import { debugLine } from '../debugger';
 import CollisionDetector from './collisionDetector';
 import DynamicObject from './dynamicObject';
+import ObjectBase from './objectBase';
+import Bullet from './bullet';
 
 const getEmptyChunksGrid = (): Chunk[][] =>
   new Array(Chunk.GRID_SIZE_X * 2 + 1).fill(null).map(col => new Array(Chunk.GRID_SIZE_Y * 2 + 1).fill(null));
@@ -181,7 +183,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   }
 
   spawnPlayer(pos: Vec2, setAsTarget = false): Player {
-    const player = new Player(pos.x, pos.y, this.entities);
+    const player = new Player(pos.x, pos.y, this);
     this.addObject(player);
 
     if (setAsTarget || !this.targetPlayer) {
@@ -203,10 +205,31 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     }
   }
 
+  removeObject(object: Updatable, i: number | undefined) {
+    if (i === undefined) {
+      i = this.objects.indexOf(object);
+    }
+    this.objects.splice(i, 1);
+
+    if (object instanceof DynamicObject) {
+      const index = this.dynamicObjects.indexOf(object);
+      if (index !== -1) {
+        this.dynamicObjects.splice(index, 1);
+      }
+    }
+    ((object as unknown) as ObjectBase).destroy?.();
+  }
+
   onPainterCollision(object: DynamicObject): void {
-    //if object is not a ghost and reacts with walls bouncing from them
-    const bounceVector = super.bounceOutOfColor(object, this.chunks, this.centerChunkPos);
-    console.log('Object collided', bounceVector?.x, bounceVector?.y);
+    if (object instanceof Bullet) {
+      console.log('bullet hit wall');
+      //TODO: remove fragment of a wall
+      object.deleted = true;
+    } else {
+      //if object is not a ghost and reacts with walls bouncing from them
+      /*const bounceVector = */ super.bounceOutOfColor(object, this.chunks, this.centerChunkPos);
+      //console.log('Object collided', bounceVector?.x, bounceVector?.y);
+    }
   }
 
   private updateChunks() {
@@ -230,8 +253,13 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   }
 
   update(delta: number) {
-    for (const object of this.objects) {
-      object.update(delta);
+    for (let i = 0; i < this.objects.length; i++) {
+      if (((this.objects[i] as unknown) as ObjectBase).deleted) {
+        this.removeObject(this.objects[i], i);
+        i--;
+      } else {
+        this.objects[i].update(delta);
+      }
     }
 
     if (this.targetPlayer) {
