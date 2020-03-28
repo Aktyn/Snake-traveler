@@ -48,9 +48,22 @@ export const postGenerateQueue = (() => {
 })();
 
 const prepareCanvas = () => {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = Chunk.RESOLUTION;
-  return canvas;
+  if ('OffscreenCanvas' in window) {
+    return new OffscreenCanvas(Chunk.RESOLUTION, Chunk.RESOLUTION);
+  } else {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = Chunk.RESOLUTION;
+    return canvas;
+  }
+};
+
+const prepareContext = (canvas: OffscreenCanvas | HTMLCanvasElement) => {
+  const ctx = canvas.getContext('2d', {
+    alpha: true
+  }) as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+  ctx.globalCompositeOperation = 'destination-out'; //'source-over' is default
+
+  return ctx;
 };
 
 export default class Chunk extends Vec2 {
@@ -68,16 +81,27 @@ export default class Chunk extends Vec2 {
   private loaded = false;
   private data: Float32Array | null = null;
   private _matrix: Matrix2D;
+
   private _webglTextureB: ExtendedTexture | null = null;
   private _webglTextureF: ExtendedTexture | null = null;
+
   public readonly canvases = {
     background: prepareCanvas(),
     foreground: prepareCanvas()
   };
+  public readonly context = {
+    background: prepareContext(this.canvases.background),
+    foreground: prepareContext(this.canvases.foreground)
+  };
+
   private backgroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
   private foregroundImgData = new ImageData(Chunk.RESOLUTION, Chunk.RESOLUTION);
 
-  public needTextureUpdate = false;
+  public readonly updateFlags = {
+    needBackgroundTextureUpdate: false,
+    needForegroundTextureUpdate: false,
+    needForegroundImageDataUpdate: false
+  };
 
   constructor(x: number, y: number) {
     super(x, y);
@@ -92,8 +116,8 @@ export default class Chunk extends Vec2 {
     this._webglTextureB?.destroy();
     this._webglTextureF?.destroy();
     this.data = null;
-    this.canvases.background.remove();
-    this.canvases.foreground.remove();
+    //this.canvases.background.remove();
+    //this.canvases.foreground.remove();
     loadingChunks.delete(this);
     this.loaded = false;
   }
@@ -105,10 +129,6 @@ export default class Chunk extends Vec2 {
   get hasWebGLTexturesGenerated() {
     return Boolean(this._webglTextureB && this._webglTextureF);
   }
-
-  /*getForegroundPixelColor(pX: number, pY: number, buffer: Uint8Array) {
-    buffer[3] = 0;
-  }*/
 
   /**
    * @param pX it should be float in range [0, 1]
@@ -130,12 +150,15 @@ export default class Chunk extends Vec2 {
   }
 
   private updateCanvases() {
-    this.canvases.background.getContext('2d', { alpha: false })?.putImageData(this.backgroundImgData, 0, 0);
-    this.canvases.foreground.getContext('2d', { alpha: false })?.putImageData(this.foregroundImgData, 0, 0);
+    this.context.background.putImageData(this.backgroundImgData, 0, 0);
+    this.context.foreground.putImageData(this.foregroundImgData, 0, 0);
+
+    this.updateFlags.needBackgroundTextureUpdate = this.updateFlags.needForegroundTextureUpdate = true;
   }
 
   setData(buffer: ArrayBuffer) {
     this.data = new Float32Array(buffer);
+    const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
 
     for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
       for (let c = 0; c < 3; c++) {
@@ -144,40 +167,43 @@ export default class Chunk extends Vec2 {
       }
 
       this.backgroundImgData.data[i * 4 + 3] = 255;
-      this.foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
+      this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
     }
 
     this.updateCanvases();
 
-    this.needTextureUpdate = true;
     this.loaded = true;
 
     postGenerateQueue.registerChunk(this);
-    //setTimeout(() => this.postGenerate(), 1);
   }
 
   public postGenerate() {
     if (!this.data || !this.loaded) {
       return;
     }
+    const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
 
     for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
       //foreground data (wall color can be set here (according to biome))
-      const value = Math.abs(this.data[i]);
-      const biome = Math.max(0, value | 0); //this.data[i] & ~0x80;
-      const nextBiome = Math.min(Biomes.length - 1, biome + 1);
-      const mixFactor = value - biome;
+      const valueB = this.data[i];
+      const valueF = Math.abs(this.data[i + foregroundOffset]);
+      const biomeB = Math.max(0, valueB | 0);
+      const biomeF = Math.max(0, valueF | 0);
+      const nextBiomeB = Math.min(Biomes.length - 1, biomeB + 1);
+      const nextBiomeF = Math.min(Biomes.length - 1, biomeF + 1);
+      const mixFactorB = valueB - biomeB;
+      const mixFactorF = valueF - biomeF;
 
       for (let c = 0; c < 3; c++) {
         //mixedBackground.byteBuffer[c];
         this.backgroundImgData.data[i * 4 + c] =
-          (mix(Biomes[biome].background.buffer[c], Biomes[nextBiome].background.buffer[c], mixFactor) * 255) | 0;
+          (mix(Biomes[biomeB].background.buffer[c], Biomes[nextBiomeB].background.buffer[c], mixFactorB) * 255) | 0;
         this.foregroundImgData.data[i * 4 + c] =
-          (mix(Biomes[biome].foreground.buffer[c], Biomes[nextBiome].foreground.buffer[c], mixFactor) * 255) | 0;
+          (mix(Biomes[biomeF].foreground.buffer[c], Biomes[nextBiomeF].foreground.buffer[c], mixFactorF) * 255) | 0;
       }
 
       this.backgroundImgData.data[i * 4 + 3] = 255; //this.data[i] < 0 ? 255 : 0; //this.data[i] & 0x80 ? 255 : 0; //255;
-      this.foregroundImgData.data[i * 4 + 3] = this.data[i] & 0x80 ? 255 : 0;
+      this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
     }
 
     //little blur for foreground texture
@@ -213,20 +239,39 @@ export default class Chunk extends Vec2 {
     }*/
 
     this.updateCanvases();
-
-    this.needTextureUpdate = true;
   }
 
   setTextures(background: ExtendedTexture, foreground: ExtendedTexture) {
     this._webglTextureB = background;
     this._webglTextureF = foreground;
-    this.needTextureUpdate = false;
+    this.updateFlags.needBackgroundTextureUpdate = this.updateFlags.needForegroundTextureUpdate = false;
+  }
+
+  needTextureUpdate() {
+    return (
+      this.updateFlags.needBackgroundTextureUpdate ||
+      this.updateFlags.needForegroundTextureUpdate ||
+      this.updateFlags.needForegroundImageDataUpdate
+    );
   }
 
   updateTexture() {
-    this._webglTextureB?.update(this.canvases.background, true);
-    this._webglTextureF?.update(this.canvases.foreground, true);
-    this.needTextureUpdate = false;
+    if (this.updateFlags.needForegroundImageDataUpdate) {
+      this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION); //TODO: optimize because it takes about 2 ms
+      this.updateFlags.needForegroundImageDataUpdate = false;
+
+      //TODO: register chunk to send it to backend for save
+    }
+
+    if (this.updateFlags.needBackgroundTextureUpdate) {
+      this._webglTextureB?.update(this.canvases.background, true);
+      this.updateFlags.needBackgroundTextureUpdate = false;
+    }
+
+    if (this.updateFlags.needForegroundTextureUpdate) {
+      this._webglTextureF?.update(this.canvases.foreground, true);
+      this.updateFlags.needForegroundTextureUpdate = false;
+    }
   }
 
   isLoaded() {

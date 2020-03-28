@@ -67,7 +67,7 @@ export default class SceneRenderer extends RendererBase {
   }
 
   private synchronizeChunkTextures(chunk: Chunk) {
-    if (chunk.needTextureUpdate) {
+    if (chunk.needTextureUpdate()) {
       //updating webgl texture
       //console.log('updating chunk:', chunk_ref);
 

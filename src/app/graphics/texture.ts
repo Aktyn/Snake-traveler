@@ -40,7 +40,11 @@ function stitchTextureObject(GL: WebGL2RenderingContext, texture: WebGLTexture):
 }
 
 const TextureModule = {
-  createFrom(GL: WebGL2RenderingContext, image: ImageData | HTMLCanvasElement | HTMLImageElement, linear = true) {
+  createFrom(
+    GL: WebGL2RenderingContext,
+    image: ImageData | HTMLCanvasElement | OffscreenCanvas | HTMLImageElement,
+    linear = true
+  ) {
     const texture = GL.createTexture();
     if (texture === null) throw new Error('Cannot create WebGLTexture');
 

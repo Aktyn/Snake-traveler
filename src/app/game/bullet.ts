@@ -10,6 +10,7 @@ const BULLET_LIFETIME = 5;
 
 export default class Bullet extends DynamicObject implements Updatable {
   private static readonly entityName = 'player';
+  public static readonly explosionRadius = 0.1;
 
   private timer = 0;
 

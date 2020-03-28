@@ -37,7 +37,8 @@ const Generator = {
     }
 
     //TODO: add stringified json with other data to this buffer
-    const data = new Float32Array(chunkSize * chunkSize); // Buffer.alloc(chunkSize * chunkSize);
+    const data = new Float32Array(chunkSize * chunkSize * 2); // Buffer.alloc(chunkSize * chunkSize);
+    const foregroundOffset = chunkSize * chunkSize;
 
     for (let _x = 0; _x < chunkSize; _x++) {
       for (let _y = 0; _y < chunkSize; _y++) {
@@ -47,7 +48,9 @@ const Generator = {
         const yy = (y + _y) / (chunkSize * 2);
         const noise = normalizedNoisesSum(xx / 3, yy / 3, 3);
 
-        data[index] = noise < 0.5 ? getBiome(xx, yy, 5, 0.1) : -getBiome(xx, yy, 4, 0.05); //negative number indicates wall
+        data[index] = getBiome(xx, yy, 5, 0.1); //background
+        const f = getBiome(xx, yy, 4, 0.05);
+        data[index + foregroundOffset] = noise < 0.5 ? f : -f; //negative number indicates wall
       }
     }
 

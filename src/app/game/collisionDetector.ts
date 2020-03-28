@@ -1,6 +1,7 @@
 import DynamicObject from './dynamicObject';
 import Chunk from './chunk';
 import Vec2 from '../common/math/vec2';
+import { getChunkAtPosition } from './common';
 
 //common variables
 let coords: number[][],
@@ -64,13 +65,7 @@ function getBounceVec(object: DynamicObject, chunks: Chunk[][], centerChunkPos: 
 }
 
 function getPixelAlpha(x: number, y: number, chunks: Chunk[][], centerChunkPos: Vec2) {
-  const left = (centerChunkPos.x - Chunk.GRID_SIZE_X) * Chunk.SIZE * 2 - Chunk.SIZE;
-  const bottom = -(centerChunkPos.y - Chunk.GRID_SIZE_Y) * Chunk.SIZE * 2 + Chunk.SIZE;
-
-  const chunkX = ((x - left) / (Chunk.SIZE * 2)) | 0;
-  const chunkY = (-(y - bottom) / (Chunk.SIZE * 2)) | 0;
-
-  const chunk = chunks[chunkX]?.[chunkY];
+  const chunk = getChunkAtPosition(x, y, chunks, centerChunkPos);
 
   if (!chunk || !chunk.isLoaded()) {
     return 255; //simulate collision behavior on chunk that is not loaded
@@ -79,15 +74,15 @@ function getPixelAlpha(x: number, y: number, chunks: Chunk[][], centerChunkPos: 
   pX = (x - (chunk.matrix.x - Chunk.SIZE)) / (Chunk.SIZE * 2);
   pY = 1 - (y - (chunk.matrix.y - Chunk.SIZE)) / (Chunk.SIZE * 2);
 
-  if (!(pX >= 0 && pX <= 1 && pY >= 0 && pY <= 1)) {
-    return 255; //simulate collision behavior on incorrect coordinates
-  }
+  //if (!(pX >= 0 && pX <= 1 && pY >= 0 && pY <= 1)) {
+  //  return 255; //simulate collision behavior on incorrect coordinates
+  //}
 
   return chunk.getForegroundPixelAlpha(pX, pY);
 }
 
 export default abstract class CollisionDetector {
-  abstract onPainterCollision(object: DynamicObject): void;
+  abstract onPainterCollision(object: DynamicObject, collisionX: number, collisionY: number): void;
 
   protected detectCollisions(dynamicObjects: DynamicObject[], chunks: Chunk[][], centerChunkPos: Vec2) {
     for (const object of dynamicObjects) {
@@ -111,7 +106,7 @@ export default abstract class CollisionDetector {
 
       if (alpha === 255) {
         //onCollide.call(this, object, pixel_buffer);
-        this.onPainterCollision(object);
+        this.onPainterCollision(object, xx, yy);
       }
     }
   }

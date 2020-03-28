@@ -10,6 +10,7 @@ import CollisionDetector from './collisionDetector';
 import DynamicObject from './dynamicObject';
 import ObjectBase from './objectBase';
 import Bullet from './bullet';
+import Painter from './painter';
 
 const getEmptyChunksGrid = (): Chunk[][] =>
   new Array(Chunk.GRID_SIZE_X * 2 + 1).fill(null).map(col => new Array(Chunk.GRID_SIZE_Y * 2 + 1).fill(null));
@@ -22,6 +23,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
   private centerChunkPos: Vec2;
   private chunksGrid: Chunk[][] = getEmptyChunksGrid();
+  private readonly painter = new Painter();
 
   private objects: Updatable[] = [];
   private dynamicObjects: DynamicObject[] = [];
@@ -220,10 +222,9 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     ((object as unknown) as ObjectBase).destroy?.();
   }
 
-  onPainterCollision(object: DynamicObject): void {
+  onPainterCollision(object: DynamicObject, collisionX: number, collisionY: number) {
     if (object instanceof Bullet) {
-      console.log('bullet hit wall');
-      //TODO: remove fragment of a wall
+      this.painter.clearCircle(this.chunksGrid, this.centerChunkPos, collisionX, collisionY, Bullet.explosionRadius);
       object.deleted = true;
     } else {
       //if object is not a ghost and reacts with walls bouncing from them
