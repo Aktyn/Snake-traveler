@@ -1,24 +1,28 @@
+@import "./common/index.css";
+
 html, body {
   margin: 0;
   font-family: 'Roboto', 'Droid Sans', 'Helvetica Neue', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #000;
+  background-color: #009688;
   color: #fff;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+hr {
+  height: 1px;
+  border: none;
+  background-color: #004D4030;
 }
 
 .layout {
   position: relative;
   width: 100vw;
   height: 100vh;
-}
-
-.fullscreen {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
 }
 
 .debug-info {

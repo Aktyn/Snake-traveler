@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom';
 import './styles/index.css';
 import App from './app/main/App';
 import * as serviceWorker from './serviceWorker';
+import { setLocale } from './app/locale.config';
+
+setLocale('pl');
 
 ReactDOM.render(<App />, document.getElementById('root'));
 

@@ -9,13 +9,17 @@ import { isWebGL2Available } from '../common/utils';
 import SceneRenderer from '../game/sceneRenderer';
 import RendererBase from '../graphics/rendererBase';
 import { registerDebugger } from '../debugger';
+import Spinner from '../gui/Spinner';
+import Worlds from './Worlds';
 
 function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [chosenWorld, setChosenWorld] = useState<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [debugText, setDebugText] = useState<string[]>([]);
   const [renderer, setRenderer] = useState<RendererBase | null>(null);
-  const [, setCore] = useState<Core | null>(null);
+
+  const [core, setCore] = useState<Core | null>(null);
 
   const webGL2Available = useMemo(isWebGL2Available, []);
 
@@ -27,19 +31,37 @@ function App() {
       const core = new Core(renderer);
       setCore(core);
 
-      core.init(() => setMapLoaded(true));
+      //core.init(() => setMapLoaded(true));
       registerDebugger(setDebugText);
       setAssetsLoaded(true);
     });
     return () => console.log('App closed');
   }, []);
 
+  useEffect(() => {
+    if (core && chosenWorld) {
+      console.log('TODO: load map with chosen world');
+    }
+  }, [chosenWorld, core]);
+
   if (!webGL2Available) {
-    return <div>WebGL2 is not available</div>;
+    return <div className="fullscreen center-content">WebGL2 is not available</div>;
+  }
+
+  if (!chosenWorld) {
+    return (
+      <div className="fullscreen center-content">
+        <Worlds onChoice={setChosenWorld} />
+      </div>
+    );
   }
 
   if (!assetsLoaded) {
-    return <div>LOADING ASSETS</div>; //TODO: full-page loading spinner
+    return (
+      <div className="fullscreen center-content">
+        <Spinner />
+      </div>
+    );
   }
 
   return (
@@ -49,15 +71,15 @@ function App() {
       <DebugInfo content={debugText} />
       {!mapLoaded && (
         <div
-          className="fullscreen"
+          className="fullscreen center-content"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             backgroundColor: '#0003'
           }}
         >
-          GENERATING MAP
+          <div>
+            <Spinner />
+            <div>Generating map</div>
+          </div>
         </div>
       )}
     </div>

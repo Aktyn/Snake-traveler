@@ -27,4 +27,8 @@ app.get('/chunk/:x/:y/:size/:biomes', (req, res) => {
   }
 });
 
+app.get('/worlds', (_, res) => {
+  res.json([{ id: 'TODO1' }, { id: 'TODO2' }]);
+});
+
 app.listen(port, () => console.log(`Server listening on port: ${port}!`));

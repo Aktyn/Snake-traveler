@@ -1,0 +1,12 @@
+.form-container {
+  background-color: #fff;
+  color: #004D40;
+  box-shadow: 0px 2px 5px #0006;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.form-container .title {
+  font-weight: bold;
+  font-size: 16px;
+}

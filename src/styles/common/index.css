@@ -1,0 +1,17 @@
+@import "./spinner.css";
+@import "./form.css";
+@import "./buttons.css";
+
+.fullscreen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.center-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
