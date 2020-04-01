@@ -2,6 +2,7 @@ import WorldMap from './worldMap';
 import { assert } from '../common/utils';
 import SceneRenderer from './sceneRenderer';
 import * as Debugger from '../debugger';
+import { WorldSchema } from '../common/schemas';
 
 export default class Core {
   private animId = 0;
@@ -90,8 +91,8 @@ export default class Core {
     tick(0);
   }
 
-  init(onMapFullyLoaded?: Function) {
-    this.map = new WorldMap(0, 0, (map: WorldMap) => {
+  init(world: WorldSchema, onMapFullyLoaded?: Function) {
+    this.map = new WorldMap(world, 0, 0, (map: WorldMap) => {
       map.spawnPlayer(map.getCenter());
       onMapFullyLoaded?.();
     });

@@ -11,10 +11,11 @@ import RendererBase from '../graphics/rendererBase';
 import { registerDebugger } from '../debugger';
 import Spinner from '../gui/Spinner';
 import Worlds from './Worlds';
+import { WorldSchema } from '../common/schemas';
 
 function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
-  const [chosenWorld, setChosenWorld] = useState<any>(null);
+  const [chosenWorld, setChosenWorld] = useState<WorldSchema | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [debugText, setDebugText] = useState<string[]>([]);
   const [renderer, setRenderer] = useState<RendererBase | null>(null);
@@ -40,7 +41,7 @@ function App() {
 
   useEffect(() => {
     if (core && chosenWorld) {
-      console.log('TODO: load map with chosen world');
+      core.init(chosenWorld, () => setMapLoaded(true));
     }
   }, [chosenWorld, core]);
 

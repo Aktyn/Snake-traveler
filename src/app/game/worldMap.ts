@@ -11,12 +11,14 @@ import DynamicObject from './dynamicObject';
 import ObjectBase from './objectBase';
 import Bullet from './bullet';
 import Painter from './painter';
+import { WorldSchema } from '../common/schemas';
 
 const getEmptyChunksGrid = (): Chunk[][] =>
   new Array(Chunk.GRID_SIZE_X * 2 + 1).fill(null).map(col => new Array(Chunk.GRID_SIZE_Y * 2 + 1).fill(null));
 
 export default class WorldMap extends CollisionDetector implements Updatable {
   public readonly entities: Entities;
+  private readonly world: WorldSchema;
 
   private cam: Camera;
   private targetPlayer: Player | null = null;
@@ -28,9 +30,10 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   private objects: Updatable[] = [];
   private dynamicObjects: DynamicObject[] = [];
 
-  constructor(startX = 0, startY = 0, onLoad: (map: WorldMap) => void) {
+  constructor(world: WorldSchema, startX = 0, startY = 0, onLoad: (map: WorldMap) => void) {
     super();
     this.entities = new Entities();
+    this.world = world;
     postGenerateQueue.registerBatchLoad(() => onLoad(this));
 
     this.centerChunkPos = Chunk.clampPos(startX | 0, -(startY | 0));
@@ -128,7 +131,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   private loadChunkAsync(x: number, y: number) {
     const chunk = new Chunk(x, y);
 
-    API.fetchChunk(x * Chunk.RESOLUTION, y * Chunk.RESOLUTION, Chunk.RESOLUTION)
+    API.fetchChunk(this.world.id, x * Chunk.RESOLUTION, y * Chunk.RESOLUTION, Chunk.RESOLUTION)
       .then(chunkData => chunk.setData(chunkData))
       .catch(e => {
         chunk.destroy();

@@ -1,7 +1,15 @@
 {
   "availableWorlds": "Dostępne światy",
   "worldCreator": "Generowanie nowego świata",
+  "noAvailableWorlds": "Brak dostępnych światów",
   "action": {
-    "play": "Graj"
+    "play": "Graj",
+    "generateWorld": "Generuj świat",
+    "delete": "Usuń",
+    "confirm": "Potwierdź"
+  },
+  "form": {
+    "name": "Nazwa",
+    "seed": "Ziarno losowości"
   }
 }

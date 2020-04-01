@@ -3,3 +3,48 @@
   min-width: 400px;
   max-width: 100%;
 }
+
+.worlds .labeled-inputs {
+  margin: 10px 0;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10px;
+  row-gap: 10px;
+  align-items: center;
+}
+
+.worlds .labeled-inputs:nth-child(odd) {
+  text-align: right;
+}
+
+.worlds .worlds-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.worlds .worlds-list > * {
+  display: inline-block;
+  margin: 4px;
+  padding: 4px 8px;
+  background-color: #4DB6AC;
+  border: 1px solid #009688;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.worlds .worlds-list > *:not(.selected):hover {
+  background-color: #80CBC4;
+}
+
+.worlds .worlds-list > *.selected {
+  background-color: #8BC34A;
+  border-color: #C5E1A5;
+}
+
+.worlds .worlds-list > *:not(:last-child) {
+  margin-bottom: 4px;
+}

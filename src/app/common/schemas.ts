@@ -1,1 +1,5 @@
-export interface WorldSchema {}
+export interface WorldSchema {
+  id: string;
+  name: string;
+  seed: string;
+}

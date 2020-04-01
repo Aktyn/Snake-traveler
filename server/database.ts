@@ -7,7 +7,7 @@ const sqlite3 = sqlite.verbose();
 // var sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database(databaseFile);
 
-db.serialize(function() {
+/*db.serialize(function() {
   db.run('CREATE TABLE IF NOT EXISTS lorem (info TEXT)');
 
   const stmt = db.prepare('INSERT INTO lorem VALUES (?)');
@@ -19,7 +19,7 @@ db.serialize(function() {
   db.each('SELECT rowid AS id, info FROM lorem', function(err: Error, row: { id: any; info: string }) {
     console.log(row.id + ': ' + row.info);
   });
-});
+});*/
 
 db.close();
 
