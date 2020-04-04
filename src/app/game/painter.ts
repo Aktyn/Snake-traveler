@@ -16,7 +16,7 @@ export default class Painter {
       for (let yy = chunkStartY; yy <= chunkEndY; yy++) {
         const chunk = chunks[xx]?.[yy];
 
-        if (!chunk || !chunk.isLoaded()) {
+        if (!chunk || !chunk.isLoaded() || !chunk.isPostGenerated()) {
           return;
         }
 

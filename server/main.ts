@@ -10,6 +10,12 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(
+  bodyParser.raw({
+    type: 'image/png',
+    limit: '10mb'
+  })
+);
 
 const checkParams = (object: { [_: string]: any }, ...params: string[]) => params.every(param => param in object);
 
@@ -38,7 +44,7 @@ app.delete('/worlds/:worldId', (req, res) => {
   }
 });
 
-app.get('/worlds/:worldId/chunk/:x/:y/:size/:biomes', (req, res) => {
+app.get('/worlds/:worldId/chunks/:x/:y/:size/:biomes', async (req, res) => {
   if (!checkParams(req.params, 'worldId', 'x', 'y', 'size', 'biomes')) {
     res.status(422).send('Incorrect request parameters');
     return;
@@ -50,13 +56,32 @@ app.get('/worlds/:worldId/chunk/:x/:y/:size/:biomes', (req, res) => {
       return;
     }
 
-    const chunk = world.generateChunk(
+    const chunk = await world.getChunk(
       parseInt(req.params.x),
       parseInt(req.params.y),
       parseInt(req.params.size),
       parseInt(req.params.biomes)
     );
     res.status(200).send(chunk);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
+app.put('/worlds/:worldId/chunks/:x/:y', (req, res) => {
+  if (!checkParams(req.params, 'worldId', 'x', 'y') || !(req.body instanceof Buffer)) {
+    res.status(422).send('Incorrect request parameters');
+    return;
+  }
+
+  try {
+    const world = Worlds.getWorld(req.params.worldId);
+    if (!world) {
+      res.status(404).send('World with given id does not exists: ' + req.params.worldId);
+      return;
+    }
+    world.update(parseInt(req.params.x), parseInt(req.params.y), req.body);
+    res.json({ success: true });
   } catch (e) {
     res.status(500).send(e.message);
   }

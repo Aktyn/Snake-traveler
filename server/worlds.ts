@@ -4,6 +4,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { dataFolder } from './external';
 import Generator from './generator';
+import WorldDatabase from './worldDatabase';
+
+const STAMP = Buffer.from(Float32Array.from(Buffer.from('mgdlnkczmr')).buffer);
 
 interface WorldSchema {
   id: string;
@@ -17,11 +20,19 @@ class World {
   private readonly seed: string;
   private readonly simplex: SimplexNoise;
 
+  public readonly db: WorldDatabase;
+
   constructor(name: string, seed: string, id = uuid()) {
     this.id = id;
     this.name = name;
     this.seed = seed;
     this.simplex = new SimplexNoise(seed);
+
+    this.db = new WorldDatabase(path.join(dataFolder, `${this.id}.sqlite3`));
+  }
+
+  destroy() {
+    this.db.close();
   }
 
   getSchema(): WorldSchema {
@@ -32,8 +43,23 @@ class World {
     };
   }
 
-  generateChunk(x: number, y: number, size: number, biomes: number) {
-    return Generator.generateChunk(this.simplex, x, y, size, biomes);
+  async getChunk(x: number, y: number, size: number, biomes: number) {
+    const chunkData = await this.db.getForegroundLayer(x, y).catch(() => {});
+
+    if (!chunkData) {
+      return Generator.generateChunk(this.simplex, x, y, size, biomes);
+      //chunkData = Generator.generateChunk(this.simplex, x, y, size, biomes);
+      //setTimeout(() => this.db.saveForegroundLayer(x, y, zlib.gzipSync(chunkData as Buffer, compressionOptions)));
+    } else {
+      //chunkData = zlib.gunzipSync(chunkData, compressionOptions);
+      const background = Generator.generateChunk(this.simplex, x, y, size, biomes, true);
+      const filler = Buffer.alloc(4 - ((STAMP.length + background.length + chunkData.length) % 4));
+      return Buffer.concat([STAMP, background, chunkData, filler]);
+    }
+  }
+
+  update(x: number, y: number, data: Buffer) {
+    this.db.saveForegroundLayer(x, y, data);
   }
 }
 
@@ -78,6 +104,10 @@ export function addWorld(name: string, seed: string): World {
 }
 
 export function deleteWorld(worldId: string) {
+  const world = worlds.get(worldId);
+  world?.db.close();
+  world?.db.deleteFile();
+  world?.destroy();
   if (worlds.delete(worldId)) {
     updateWorldsList(worlds);
   }

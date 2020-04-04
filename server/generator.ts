@@ -13,7 +13,14 @@ const normalizedNoisesSum = (simplex: SimplexNoise, x: number, y: number, noises
 
 const Generator = {
   /** params should be integers */ //TODO: this function takes about 30ms, it can be optimized by running multiple threads
-  generateChunk: (simplex: SimplexNoise, x: number, y: number, chunkSize: number, biomes: number) => {
+  generateChunk: (
+    simplex: SimplexNoise,
+    x: number,
+    y: number,
+    chunkSize: number,
+    biomes: number,
+    onlyBackground = false
+  ) => {
     x = x | 0;
     y = y | 0;
     chunkSize = chunkSize | 0;
@@ -30,21 +37,36 @@ const Generator = {
       return Math.pow(b / samples, 2) * biomes; // | 0;
     }
 
-    //TODO: add stringified json with other data to this buffer
-    const data = new Float32Array(chunkSize * chunkSize * 2); // Buffer.alloc(chunkSize * chunkSize);
     const foregroundOffset = chunkSize * chunkSize;
+    let data: Float32Array;
 
-    for (let _x = 0; _x < chunkSize; _x++) {
-      for (let _y = 0; _y < chunkSize; _y++) {
-        const index = _x + _y * chunkSize;
+    if (onlyBackground) {
+      data = new Float32Array(chunkSize * chunkSize);
 
-        const xx = (x + _x) / (chunkSize * 2);
-        const yy = (y + _y) / (chunkSize * 2);
-        const noise = normalizedNoisesSum(simplex, xx / 3, yy / 3, 3);
+      for (let _x = 0; _x < chunkSize; _x++) {
+        for (let _y = 0; _y < chunkSize; _y++) {
+          const index = _x + _y * chunkSize;
+          const xx = (x + _x) / (chunkSize * 2);
+          const yy = (y + _y) / (chunkSize * 2);
 
-        data[index] = getBiome(xx, yy, 3, 0.1); //background
-        const f = getBiome(xx, yy, 4, 0.07);
-        data[index + foregroundOffset] = noise < 0.5 ? f : -f; //negative number indicates wall
+          data[index] = getBiome(xx, yy, 3, 0.1); //only background
+        }
+      }
+    } else {
+      data = new Float32Array(chunkSize * chunkSize * 2);
+
+      for (let _x = 0; _x < chunkSize; _x++) {
+        for (let _y = 0; _y < chunkSize; _y++) {
+          const index = _x + _y * chunkSize;
+
+          const xx = (x + _x) / (chunkSize * 2);
+          const yy = (y + _y) / (chunkSize * 2);
+          const noise = normalizedNoisesSum(simplex, xx / 3, yy / 3, 3);
+
+          data[index] = getBiome(xx, yy, 3, 0.1); //background
+          const f = getBiome(xx, yy, 4, 0.07);
+          data[index + foregroundOffset] = noise < 0.5 ? f : -f;
+        }
       }
     }
 

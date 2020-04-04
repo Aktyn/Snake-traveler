@@ -3,6 +3,10 @@ import Matrix2D from '../common/math/matrix2d';
 import { ExtendedTexture } from '../graphics/texture';
 import { Biomes } from '../common/colors';
 import { mix } from '../common/utils';
+import API from '../common/api';
+import { WorldSchema } from '../common/schemas';
+
+const STAMP = Float32Array.from(Buffer.from('mgdlnkczmr'));
 
 const loadingChunks: Set<Chunk> = new Set();
 
@@ -31,7 +35,7 @@ export const postGenerateQueue = (() => {
       return;
     }
 
-    generateTimeout = setTimeout(setQueueTimeout, 200);
+    generateTimeout = setTimeout(setQueueTimeout, 1000 / 30);
   }
 
   return {
@@ -47,14 +51,74 @@ export const postGenerateQueue = (() => {
   };
 })();
 
-const prepareCanvas = () => {
-  if ('OffscreenCanvas' in window) {
-    return new OffscreenCanvas(Chunk.RESOLUTION, Chunk.RESOLUTION);
-  } else {
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = Chunk.RESOLUTION;
-    return canvas;
+export const saveQueue = (() => {
+  const registeredChunks = new Set<Chunk>();
+  let saveTimeout: NodeJS.Timeout | null = null;
+  let savingChunk: Chunk | undefined;
+
+  function canvasToBlob(canvas: HTMLCanvasElement) {
+    return new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject('Cannot extract blob data from canvas');
+        }
+      });
+    });
   }
+
+  function setQueueTimeout() {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+
+    if (savingChunk || !registeredChunks.size) {
+      saveTimeout = null;
+      return;
+    }
+
+    savingChunk = registeredChunks.values().next().value;
+
+    setTimeout(async () => {
+      if (!savingChunk) {
+        return;
+      }
+      const foregroundData = await canvasToBlob(savingChunk.canvases.foreground);
+      registeredChunks.delete(savingChunk);
+      await API.updateChunk(
+        savingChunk.world.id,
+        savingChunk.x * Chunk.RESOLUTION,
+        savingChunk.y * Chunk.RESOLUTION,
+        foregroundData
+      );
+
+      //console.log('saved', savingChunk?.x, savingChunk?.y);
+      savingChunk = undefined;
+      setQueueTimeout();
+    }, 1000 / 30);
+
+    saveTimeout = setTimeout(setQueueTimeout, 1000 / 30);
+  }
+
+  return {
+    registerChunk(chunk: Chunk) {
+      if (!registeredChunks.has(chunk)) {
+        registeredChunks.add(chunk);
+        setQueueTimeout();
+      }
+    }
+  };
+})();
+
+const prepareCanvas = () => {
+  //if ('OffscreenCanvas' in window) {
+  //  return new OffscreenCanvas(Chunk.RESOLUTION, Chunk.RESOLUTION);
+  //} else {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = Chunk.RESOLUTION;
+  return canvas;
+  //}
 };
 
 const prepareContext = (canvas: OffscreenCanvas | HTMLCanvasElement) => {
@@ -69,16 +133,20 @@ const prepareContext = (canvas: OffscreenCanvas | HTMLCanvasElement) => {
 export default class Chunk extends Vec2 {
   public static readonly RESOLUTION = 256;
   public static readonly SIZE = Chunk.RESOLUTION / 1024;
+  private static readonly SPAWN_AREA_RADIUS = 0.5;
 
   //the number of chunks loaded in each direction from camera center
-  public static readonly GRID_SIZE_Y = 3; //(0.5 / Chunk.SIZE + 4) | 0;
-  public static readonly GRID_SIZE_X = 4; //Chunk.GRID_SIZE_Y * 2 - 4;
+  public static readonly GRID_SIZE_Y = (0.5 / Chunk.SIZE + 4) | 0; //3
+  public static readonly GRID_SIZE_X = Chunk.GRID_SIZE_Y * 2 - 4; //4
 
   public static get loadingChunks() {
     return loadingChunks.size;
   }
 
   private loaded = false;
+  private restored = false;
+  private postGenerated = false;
+  public readonly world: WorldSchema;
   private data: Float32Array | null = null;
   private _matrix: Matrix2D;
 
@@ -103,8 +171,9 @@ export default class Chunk extends Vec2 {
     needForegroundImageDataUpdate: false
   };
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, world: WorldSchema) {
     super(x, y);
+    this.world = world;
     this._matrix = new Matrix2D();
     this._matrix.setPos(x * Chunk.SIZE * 2, -y * Chunk.SIZE * 2);
     this._matrix.setScale(Chunk.SIZE, Chunk.SIZE);
@@ -116,8 +185,6 @@ export default class Chunk extends Vec2 {
     this._webglTextureB?.destroy();
     this._webglTextureF?.destroy();
     this.data = null;
-    //this.canvases.background.remove();
-    //this.canvases.foreground.remove();
     loadingChunks.delete(this);
     this.loaded = false;
   }
@@ -156,25 +223,83 @@ export default class Chunk extends Vec2 {
     this.updateFlags.needBackgroundTextureUpdate = this.updateFlags.needForegroundTextureUpdate = true;
   }
 
-  setData(buffer: ArrayBuffer) {
-    this.data = new Float32Array(buffer);
-    const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
-
-    for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
-      for (let c = 0; c < 3; c++) {
-        this.backgroundImgData.data[i * 4 + c] = 128;
-        this.foregroundImgData.data[i * 4 + c] = 255;
-      }
-
-      this.backgroundImgData.data[i * 4 + 3] = 255;
-      this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
+  private isWithinSpawnArea(pixelIndex: number) {
+    if (
+      this.matrix.x + Chunk.SIZE < -Chunk.SPAWN_AREA_RADIUS ||
+      this.matrix.x - Chunk.SIZE > Chunk.SPAWN_AREA_RADIUS ||
+      this.matrix.y + Chunk.SIZE < -Chunk.SPAWN_AREA_RADIUS ||
+      this.matrix.y - Chunk.SIZE > Chunk.SPAWN_AREA_RADIUS
+    ) {
+      return;
     }
 
-    this.updateCanvases();
+    const y = (pixelIndex / Chunk.RESOLUTION) | 0;
+    const x = pixelIndex - y * Chunk.RESOLUTION;
 
-    this.loaded = true;
+    const xx = this.matrix.x - Chunk.SIZE + (x / Chunk.RESOLUTION) * Chunk.SIZE * 2;
+    const yy = -this.matrix.y - Chunk.SIZE + (y / Chunk.RESOLUTION) * Chunk.SIZE * 2;
 
-    postGenerateQueue.registerChunk(this);
+    return xx * xx + yy * yy < Chunk.SPAWN_AREA_RADIUS ** 2;
+  }
+
+  setData(buffer: ArrayBuffer) {
+    this.data = new Float32Array(buffer);
+
+    let restored = true;
+    for (let i = 0; i < STAMP.length; i++) {
+      if (STAMP[i] !== this.data[i]) {
+        restored = false;
+        break;
+      }
+    }
+    this.restored = restored;
+
+    const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
+
+    if (restored) {
+      this.context.background.globalCompositeOperation = 'source-over';
+      this.context.background.fillStyle = '#808080';
+      this.context.background.fillRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+      this.context.background.globalCompositeOperation = 'destination-out';
+
+      const img = new Image();
+      img.width = img.height = Chunk.RESOLUTION;
+      img.onload = () => {
+        this.context.foreground.clearRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+        this.context.foreground.globalCompositeOperation = 'source-over';
+        this.context.foreground.drawImage(img, 0, 0);
+        this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+
+        this.context.foreground.globalCompositeOperation = 'destination-out';
+
+        postGenerateQueue.registerChunk(this);
+
+        this.updateFlags.needBackgroundTextureUpdate = this.updateFlags.needForegroundTextureUpdate = true;
+        this.loaded = true;
+      };
+      const reader = new FileReader();
+      reader.onerror = console.error;
+      reader.onload = () => (img.src = reader.result as string);
+      reader.readAsDataURL(new Blob([this.data.subarray(STAMP.length + foregroundOffset)]));
+    } else {
+      for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
+        for (let c = 0; c < 3; c++) {
+          this.backgroundImgData.data[i * 4 + c] = 128;
+          this.foregroundImgData.data[i * 4 + c] = 255;
+        }
+
+        this.backgroundImgData.data[i * 4 + 3] = 255;
+        if (this.isWithinSpawnArea(i)) {
+          this.data[i + foregroundOffset] = 0;
+        }
+        this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
+      }
+
+      this.updateCanvases();
+
+      this.loaded = true;
+      postGenerateQueue.registerChunk(this);
+    }
   }
 
   public postGenerate() {
@@ -183,62 +308,84 @@ export default class Chunk extends Vec2 {
     }
     const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
 
-    for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
-      //foreground data (wall color can be set here (according to biome))
-      const valueB = this.data[i];
-      const valueF = Math.abs(this.data[i + foregroundOffset]);
-      const biomeB = Math.max(0, valueB | 0);
-      const biomeF = Math.max(0, valueF | 0);
-      const nextBiomeB = Math.min(Biomes.length - 1, biomeB + 1);
-      const nextBiomeF = Math.min(Biomes.length - 1, biomeF + 1);
-      const mixFactorB = valueB - biomeB;
-      const mixFactorF = valueF - biomeF;
+    if (this.restored) {
+      //const bgData = this.data.subarray(STAMP.length, STAMP.length + foregroundOffset - 1);
+      //paint only background layer
+      for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
+        const valueB = this.data[i + STAMP.length];
+        const biomeB = Math.max(0, valueB | 0);
+        const nextBiomeB = Math.min(Biomes.length - 1, biomeB + 1);
+        const mixFactorB = valueB - biomeB;
 
-      for (let c = 0; c < 3; c++) {
-        //mixedBackground.byteBuffer[c];
-        this.backgroundImgData.data[i * 4 + c] =
-          (mix(Biomes[biomeB].background.buffer[c], Biomes[nextBiomeB].background.buffer[c], mixFactorB) * 255) | 0;
-        this.foregroundImgData.data[i * 4 + c] =
-          (mix(Biomes[biomeF].foreground.buffer[c], Biomes[nextBiomeF].foreground.buffer[c], mixFactorF) * 255) | 0;
+        for (let c = 0; c < 3; c++) {
+          this.backgroundImgData.data[i * 4 + c] =
+            (mix(Biomes[biomeB].background.buffer[c], Biomes[nextBiomeB].background.buffer[c], mixFactorB) * 255) | 0;
+        }
+        this.backgroundImgData.data[i * 4 + 3] = 255;
       }
 
-      this.backgroundImgData.data[i * 4 + 3] = 255; //this.data[i] < 0 ? 255 : 0; //this.data[i] & 0x80 ? 255 : 0; //255;
-      this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
-    }
+      this.context.background.putImageData(this.backgroundImgData, 0, 0);
+      this.updateFlags.needBackgroundTextureUpdate = true;
+    } else {
+      for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
+        //foreground data (wall color can be set here (according to biome))
+        const valueB = this.data[i];
+        const valueF = Math.abs(this.data[i + foregroundOffset]);
+        const biomeB = Math.max(0, valueB | 0);
+        const biomeF = Math.max(0, valueF | 0);
+        const nextBiomeB = Math.min(Biomes.length - 1, biomeB + 1);
+        const nextBiomeF = Math.min(Biomes.length - 1, biomeF + 1);
+        const mixFactorB = valueB - biomeB;
+        const mixFactorF = valueF - biomeF;
 
-    //little blur for foreground texture
-    /*const blurRadius = 3;
-    const maxNeighbors = (blurRadius * 2 + 1) ** 2 - 1;
-    for (let x = 0; x < Chunk.RESOLUTION; x++) {
-      for (let y = 0; y < Chunk.RESOLUTION; y++) {
-        const i = x + y * Chunk.RESOLUTION;
-
-        let neighbors = 0; //0 -> (blurRadius*2+1)**2 - 1
-        for (let yy = -blurRadius; yy <= blurRadius; yy++) {
-          for (let xx = -blurRadius; xx <= blurRadius; xx++) {
-            if (
-              x + xx < 0 ||
-              x + xx >= Chunk.RESOLUTION ||
-              y + yy < 0 ||
-              y + yy >= Chunk.RESOLUTION ||
-              (xx === 0 && yy === 0)
-            ) {
-              neighbors++;
-              continue;
-            }
-            const j = x + xx + (y + yy) * Chunk.RESOLUTION;
-            if (backgroundImgData.data[j * 4 + 3] > 0) {
-              neighbors++;
-            }
-          }
+        for (let c = 0; c < 3; c++) {
+          this.backgroundImgData.data[i * 4 + c] =
+            (mix(Biomes[biomeB].background.buffer[c], Biomes[nextBiomeB].background.buffer[c], mixFactorB) * 255) | 0;
+          this.foregroundImgData.data[i * 4 + c] =
+            (mix(Biomes[biomeF].foreground.buffer[c], Biomes[nextBiomeF].foreground.buffer[c], mixFactorF) * 255) | 0;
         }
 
-        foregroundImgData.data[i * 4 + 3] = (backgroundImgData.data[i * 4 + 3] * (neighbors / maxNeighbors)) | 0;
-        backgroundImgData.data[i * 4 + 3] = 255;
+        //this.backgroundImgData.data[i * 4 + 3] = 255; //this.data[i] < 0 ? 255 : 0; //this.data[i] & 0x80 ? 255 : 0; //255;
+        //this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
       }
-    }*/
 
-    this.updateCanvases();
+      //little blur for foreground texture
+      /*const blurRadius = 3;
+      const maxNeighbors = (blurRadius * 2 + 1) ** 2 - 1;
+      for (let x = 0; x < Chunk.RESOLUTION; x++) {
+        for (let y = 0; y < Chunk.RESOLUTION; y++) {
+          const i = x + y * Chunk.RESOLUTION;
+
+          let neighbors = 0; //0 -> (blurRadius*2+1)**2 - 1
+          for (let yy = -blurRadius; yy <= blurRadius; yy++) {
+            for (let xx = -blurRadius; xx <= blurRadius; xx++) {
+              if (
+                x + xx < 0 ||
+                x + xx >= Chunk.RESOLUTION ||
+                y + yy < 0 ||
+                y + yy >= Chunk.RESOLUTION ||
+                (xx === 0 && yy === 0)
+              ) {
+                neighbors++;
+                continue;
+              }
+              const j = x + xx + (y + yy) * Chunk.RESOLUTION;
+              if (backgroundImgData.data[j * 4 + 3] > 0) {
+                neighbors++;
+              }
+            }
+          }
+
+          foregroundImgData.data[i * 4 + 3] = (backgroundImgData.data[i * 4 + 3] * (neighbors / maxNeighbors)) | 0;
+          backgroundImgData.data[i * 4 + 3] = 255;
+        }
+      }*/
+
+      this.updateCanvases();
+      saveQueue.registerChunk(this); //TODO: {chunk: this, saveBackground: true} (background can be saved in backend just once after first chunk post generation)
+    }
+
+    this.postGenerated = true;
   }
 
   setTextures(background: ExtendedTexture, foreground: ExtendedTexture) {
@@ -260,7 +407,7 @@ export default class Chunk extends Vec2 {
       this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION); //TODO: optimize because it takes about 2 ms
       this.updateFlags.needForegroundImageDataUpdate = false;
 
-      //TODO: register chunk to send it to backend for save
+      saveQueue.registerChunk(this);
     }
 
     if (this.updateFlags.needBackgroundTextureUpdate) {
@@ -276,6 +423,10 @@ export default class Chunk extends Vec2 {
 
   isLoaded() {
     return this.loaded;
+  }
+
+  isPostGenerated() {
+    return this.postGenerated;
   }
 
   static clampPos(x: number, y: number) {

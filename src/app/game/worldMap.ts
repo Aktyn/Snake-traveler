@@ -129,11 +129,12 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   }
 
   private loadChunkAsync(x: number, y: number) {
-    const chunk = new Chunk(x, y);
+    const chunk = new Chunk(x, y, this.world);
 
     API.fetchChunk(this.world.id, x * Chunk.RESOLUTION, y * Chunk.RESOLUTION, Chunk.RESOLUTION)
       .then(chunkData => chunk.setData(chunkData))
       .catch(e => {
+        console.log(e);
         chunk.destroy();
       });
 

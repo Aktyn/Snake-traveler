@@ -54,6 +54,8 @@ function WorldSelectionView({
     API.getWorlds().then(res => {
       setAvailableWorlds(res);
       setSelectedWorld(res[0] || null);
+
+      //onChoice(res[0]); //TEMP
     });
   }
 
