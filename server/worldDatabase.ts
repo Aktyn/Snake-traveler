@@ -7,7 +7,7 @@ export default class WorldDatabase {
   private readonly filePath: string;
   private readonly db: sqlite.Database;
 
-  private foregroundInsertQuery: sqlite.Statement | null = null;
+  private layersInsertQuery: sqlite.Statement | null = null;
 
   constructor(filePath: string) {
     this.filePath = filePath;
@@ -32,29 +32,12 @@ export default class WorldDatabase {
   private init() {
     this.db.serialize(() => {
       this.db.run(`CREATE TABLE IF NOT EXISTS chunks (
-        x	INTEGER NOT NULL,
-        y	INTEGER NOT NULL,
-        data	BLOB,
+        x INTEGER NOT NULL,
+        y INTEGER NOT NULL,
+        foreground BLOB,
+        background BLOB,
         PRIMARY KEY("x","y")
       )`);
-
-      /*const stmt = this.db.prepare('INSERT INTO lorem VALUES (?)');
-      for (let i = 0; i < 3; i++) {
-        stmt.run('Ipsum ' + i);
-      }
-      stmt.finalize();*/
-
-      /*this.db.each('SELECT rowid AS id, info FROM lorem', function(err: Error, row: { id: any; info: string }) {
-        console.log(row.id + ': ' + row.info);
-      });*/
-      /*this.db.get('SELECT * FROM chunks WHERE x=0 AND y=2 LIMIT 1', function(err, row) {
-        console.log(err, this, row);
-      });*/
-
-      /*const stmt = this.db.prepare('SELECT * FROM chunks WHERE x=? AND y=? LIMIT 1');
-      stmt.get([0, 0], function(err, row) {
-        console.log(err, row);
-      })*/
     });
 
     this.db.on('error', err => {
@@ -62,28 +45,52 @@ export default class WorldDatabase {
     });
   }
 
-  async getForegroundLayer(x: number, y: number): Promise<Buffer | null> {
+  async getForegroundLayer(x: number, y: number): Promise<{ foreground: Buffer | null; background: Buffer | null }> {
     return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare('SELECT data FROM chunks WHERE x=? AND y=? LIMIT 1');
+      const stmt = this.db.prepare('SELECT foreground, background FROM chunks WHERE x=? AND y=? LIMIT 1');
       stmt.get([x, y], function(err: Error, row: any) {
         if (err) {
           reject(err);
         } else {
-          resolve(row?.data || null);
+          resolve(row);
         }
         stmt.finalize();
       });
     });
   }
 
-  saveForegroundLayer(x: number, y: number, data: Buffer | null) {
-    try {
-      this.foregroundInsertQuery = this.db.prepare('INSERT OR REPLACE INTO chunks VALUES (?,?,?)');
-      this.foregroundInsertQuery.run([x | 0, y | 0, data], function(err: Error) {});
+  saveLayers(x: number, y: number, foreground: Buffer | null, background: Buffer | null) {
+    setTimeout(() => {
+      try {
+        if (background) {
+          this.layersInsertQuery = this.db.prepare('INSERT OR REPLACE INTO chunks VALUES (?,?,?,?)');
+          this.layersInsertQuery.run([x | 0, y | 0, foreground, background], function(err) {
+            if (err) {
+              console.error(err);
+            }
+          });
+        } else {
+          this.layersInsertQuery = this.db.prepare(
+            'INSERT OR REPLACE INTO chunks VALUES ($x,$y,$foreground, (SELECT background from chunks as ch2 WHERE ch2.x=$x AND ch2.y=$y))'
+          );
+          this.layersInsertQuery.run(
+            {
+              $x: x | 0,
+              $y: y | 0,
+              $foreground: foreground
+            },
+            function(err) {
+              if (err) {
+                console.error(err);
+              }
+            }
+          );
+        }
 
-      this.foregroundInsertQuery.finalize(); //TODO: delay finalization to handle multiple save requests
-    } catch (e) {
-      console.error(e);
-    }
+        this.layersInsertQuery.finalize(); //TODO: delay finalization to handle multiple save requests
+      } catch (e) {
+        console.error(e);
+      }
+    }, 1);
   }
 }

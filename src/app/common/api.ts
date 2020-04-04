@@ -33,13 +33,16 @@ const API = {
     );
   },
 
-  updateChunk(worldId: string, x: number, y: number, data: Blob) {
+  updateChunk(worldId: string, x: number, y: number, foregroundData: Blob, backgroundData?: Blob) {
     const fd = new FormData();
-    fd.append('data', data, 'chunk.png'); //TODO: check if filename is necessary
+    fd.append('foreground', foregroundData);
+    if (backgroundData) {
+      fd.append('background', backgroundData);
+    }
 
     return fetch(`${BASE_URL}/worlds/${worldId}/chunks/${x}/${y}`, {
       ...METHOD.PUT,
-      body: data //JSON.stringify({ x, y })
+      body: fd //JSON.stringify({ x, y })
     }).then(res => res.json());
   },
 

@@ -6,7 +6,7 @@ import { mix } from '../common/utils';
 import API from '../common/api';
 import { WorldSchema } from '../common/schemas';
 
-const STAMP = Float32Array.from(Buffer.from('mgdlnkczmr'));
+const STAMP = Buffer.from('mgdlnkczmr');
 
 const loadingChunks: Set<Chunk> = new Set();
 
@@ -22,10 +22,14 @@ export const postGenerateQueue = (() => {
 
     if (!loadingChunks.size) {
       if (registeredChunks.length) {
-        setTimeout(() => {
-          registeredChunks.shift()?.postGenerate();
-          setQueueTimeout();
-        }, 1000 / 30);
+        const chunk = registeredChunks.shift();
+        setTimeout(
+          () => {
+            chunk?.postGenerate();
+            setQueueTimeout();
+          },
+          chunk?.isRestored() ? 0 : 1000 / 30
+        );
       } else {
         //console.log('chunks batch fully generated');
         registeredBatchLoadCallbacks.forEach(cb => cb());
@@ -52,9 +56,14 @@ export const postGenerateQueue = (() => {
 })();
 
 export const saveQueue = (() => {
-  const registeredChunks = new Set<Chunk>();
+  interface ChunkToSave {
+    chunk: Chunk;
+    saveBackground?: boolean;
+  }
+
+  const registeredChunks = new Set<ChunkToSave>();
   let saveTimeout: NodeJS.Timeout | null = null;
-  let savingChunk: Chunk | undefined;
+  let savingChunk: ChunkToSave | undefined;
 
   function canvasToBlob(canvas: HTMLCanvasElement) {
     return new Promise<Blob>((resolve, reject) => {
@@ -78,33 +87,35 @@ export const saveQueue = (() => {
       return;
     }
 
+    //TODO: update multiple chunks in single request
     savingChunk = registeredChunks.values().next().value;
 
     setTimeout(async () => {
       if (!savingChunk) {
         return;
       }
-      const foregroundData = await canvasToBlob(savingChunk.canvases.foreground);
+      const foregroundData = await canvasToBlob(savingChunk.chunk.canvases.foreground);
       registeredChunks.delete(savingChunk);
       await API.updateChunk(
-        savingChunk.world.id,
-        savingChunk.x * Chunk.RESOLUTION,
-        savingChunk.y * Chunk.RESOLUTION,
-        foregroundData
+        savingChunk.chunk.world.id,
+        savingChunk.chunk.x * Chunk.RESOLUTION,
+        savingChunk.chunk.y * Chunk.RESOLUTION,
+        foregroundData,
+        savingChunk.saveBackground ? await canvasToBlob(savingChunk.chunk.canvases.background) : undefined
       );
 
       //console.log('saved', savingChunk?.x, savingChunk?.y);
       savingChunk = undefined;
       setQueueTimeout();
-    }, 1000 / 30);
+    }, 1000 / 60);
 
-    saveTimeout = setTimeout(setQueueTimeout, 1000 / 30);
+    saveTimeout = setTimeout(setQueueTimeout, 1000 / 60);
   }
 
   return {
-    registerChunk(chunk: Chunk) {
-      if (!registeredChunks.has(chunk)) {
-        registeredChunks.add(chunk);
+    registerChunk(chunkToSave: ChunkToSave) {
+      if (!registeredChunks.has(chunkToSave)) {
+        registeredChunks.add(chunkToSave);
         setQueueTimeout();
       }
     }
@@ -147,7 +158,7 @@ export default class Chunk extends Vec2 {
   private restored = false;
   private postGenerated = false;
   public readonly world: WorldSchema;
-  private data: Float32Array | null = null;
+  private data: Buffer | null = null;
   private _matrix: Matrix2D;
 
   private _webglTextureB: ExtendedTexture | null = null;
@@ -242,46 +253,42 @@ export default class Chunk extends Vec2 {
     return xx * xx + yy * yy < Chunk.SPAWN_AREA_RADIUS ** 2;
   }
 
-  setData(buffer: ArrayBuffer) {
-    this.data = new Float32Array(buffer);
+  private bufferToImage(buffer: Buffer): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.width = img.height = Chunk.RESOLUTION;
+      img.onload = () => resolve(img);
+      img.onerror = reject;
 
+      const Reader = new FileReader();
+      Reader.onerror = reject;
+      Reader.onload = () => (img.src = Reader.result as string);
+      Reader.readAsDataURL(new Blob([buffer]));
+    });
+  }
+
+  setData(arrayBuffer: ArrayBuffer) {
+    const dataView = new DataView(arrayBuffer);
     let restored = true;
     for (let i = 0; i < STAMP.length; i++) {
-      if (STAMP[i] !== this.data[i]) {
+      if (STAMP[i] !== dataView.getUint8(i)) {
         restored = false;
         break;
       }
     }
     this.restored = restored;
 
-    const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
-
     if (restored) {
-      this.context.background.globalCompositeOperation = 'source-over';
-      this.context.background.fillStyle = '#808080';
-      this.context.background.fillRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
-      this.context.background.globalCompositeOperation = 'destination-out';
+      this.data = Buffer.from(arrayBuffer) as Buffer;
 
-      const img = new Image();
-      img.width = img.height = Chunk.RESOLUTION;
-      img.onload = () => {
-        this.context.foreground.clearRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
-        this.context.foreground.globalCompositeOperation = 'source-over';
-        this.context.foreground.drawImage(img, 0, 0);
-        this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+      this.updateFlags.needForegroundTextureUpdate = true;
 
-        this.context.foreground.globalCompositeOperation = 'destination-out';
-
-        postGenerateQueue.registerChunk(this);
-
-        this.updateFlags.needBackgroundTextureUpdate = this.updateFlags.needForegroundTextureUpdate = true;
-        this.loaded = true;
-      };
-      const reader = new FileReader();
-      reader.onerror = console.error;
-      reader.onload = () => (img.src = reader.result as string);
-      reader.readAsDataURL(new Blob([this.data.subarray(STAMP.length + foregroundOffset)]));
+      this.loaded = true;
+      postGenerateQueue.registerChunk(this);
     } else {
+      this.data = (new Float32Array(arrayBuffer) as unknown) as Buffer;
+      const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
+
       for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
         for (let c = 0; c < 3; c++) {
           this.backgroundImgData.data[i * 4 + c] = 128;
@@ -302,31 +309,14 @@ export default class Chunk extends Vec2 {
     }
   }
 
-  public postGenerate() {
+  public async postGenerate() {
     if (!this.data || !this.loaded) {
       return;
     }
-    const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
 
-    if (this.restored) {
-      //const bgData = this.data.subarray(STAMP.length, STAMP.length + foregroundOffset - 1);
-      //paint only background layer
-      for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
-        const valueB = this.data[i + STAMP.length];
-        const biomeB = Math.max(0, valueB | 0);
-        const nextBiomeB = Math.min(Biomes.length - 1, biomeB + 1);
-        const mixFactorB = valueB - biomeB;
+    if (!this.restored) {
+      const foregroundOffset = Chunk.RESOLUTION * Chunk.RESOLUTION;
 
-        for (let c = 0; c < 3; c++) {
-          this.backgroundImgData.data[i * 4 + c] =
-            (mix(Biomes[biomeB].background.buffer[c], Biomes[nextBiomeB].background.buffer[c], mixFactorB) * 255) | 0;
-        }
-        this.backgroundImgData.data[i * 4 + 3] = 255;
-      }
-
-      this.context.background.putImageData(this.backgroundImgData, 0, 0);
-      this.updateFlags.needBackgroundTextureUpdate = true;
-    } else {
       for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
         //foreground data (wall color can be set here (according to biome))
         const valueB = this.data[i];
@@ -382,7 +372,45 @@ export default class Chunk extends Vec2 {
       }*/
 
       this.updateCanvases();
-      saveQueue.registerChunk(this); //TODO: {chunk: this, saveBackground: true} (background can be saved in backend just once after first chunk post generation)
+      saveQueue.registerChunk({ chunk: this, saveBackground: true });
+    } else {
+      const buff = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT * 2);
+      this.data.copy(buff, 0, STAMP.length, STAMP.length + buff.length);
+
+      //[backgroundSize, foregroundSize]
+      const sizes = new Uint32Array(buff.buffer);
+
+      const foregroundOffset = STAMP.length + sizes.byteLength + sizes[0];
+
+      const fgLoading = this.bufferToImage(this.data.subarray(foregroundOffset)).then(img => {
+        this.context.foreground.clearRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+        this.context.foreground.globalCompositeOperation = 'source-over';
+        this.context.foreground.drawImage(img, 0, 0);
+        this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+
+        this.context.foreground.globalCompositeOperation = 'destination-out';
+
+        this.updateFlags.needForegroundTextureUpdate = true;
+      });
+
+      const bgLoading = this.bufferToImage(this.data.subarray(STAMP.length + sizes.byteLength, foregroundOffset)).then(
+        img => {
+          this.context.background.clearRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+          this.context.background.globalCompositeOperation = 'source-over';
+          this.context.background.drawImage(img, 0, 0);
+          this.backgroundImgData = this.context.background.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
+
+          this.context.background.globalCompositeOperation = 'destination-out';
+
+          this.updateFlags.needBackgroundTextureUpdate = true;
+        }
+      );
+
+      await Promise.all([fgLoading, bgLoading])
+        .then(() => {
+          this.loaded = true;
+        })
+        .catch(console.error);
     }
 
     this.postGenerated = true;
@@ -407,7 +435,7 @@ export default class Chunk extends Vec2 {
       this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION); //TODO: optimize because it takes about 2 ms
       this.updateFlags.needForegroundImageDataUpdate = false;
 
-      saveQueue.registerChunk(this);
+      saveQueue.registerChunk({ chunk: this });
     }
 
     if (this.updateFlags.needBackgroundTextureUpdate) {
@@ -427,6 +455,10 @@ export default class Chunk extends Vec2 {
 
   isPostGenerated() {
     return this.postGenerated;
+  }
+
+  isRestored() {
+    return this.restored;
   }
 
   static clampPos(x: number, y: number) {

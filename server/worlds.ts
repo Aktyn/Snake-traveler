@@ -6,7 +6,8 @@ import { dataFolder } from './external';
 import Generator from './generator';
 import WorldDatabase from './worldDatabase';
 
-const STAMP = Buffer.from(Float32Array.from(Buffer.from('mgdlnkczmr')).buffer);
+//const STAMP = Buffer.from(Float32Array.from(Buffer.from('mgdlnkczmr')).buffer);
+const STAMP = Buffer.from('mgdlnkczmr');
 
 interface WorldSchema {
   id: string;
@@ -46,20 +47,22 @@ class World {
   async getChunk(x: number, y: number, size: number, biomes: number) {
     const chunkData = await this.db.getForegroundLayer(x, y).catch(() => {});
 
-    if (!chunkData) {
+    if (!chunkData || !chunkData.foreground || !chunkData.background) {
       return Generator.generateChunk(this.simplex, x, y, size, biomes);
       //chunkData = Generator.generateChunk(this.simplex, x, y, size, biomes);
       //setTimeout(() => this.db.saveForegroundLayer(x, y, zlib.gzipSync(chunkData as Buffer, compressionOptions)));
     } else {
-      //chunkData = zlib.gunzipSync(chunkData, compressionOptions);
-      const background = Generator.generateChunk(this.simplex, x, y, size, biomes, true);
-      const filler = Buffer.alloc(4 - ((STAMP.length + background.length + chunkData.length) % 4));
-      return Buffer.concat([STAMP, background, chunkData, filler]);
+      //const background = Generator.generateChunk(this.simplex, x, y, size, biomes, true);
+      const sizes = Buffer.from(new Uint32Array([chunkData.background.length, chunkData.foreground.length]).buffer);
+      const filler = Buffer.alloc(
+        4 - ((STAMP.length + sizes.length + chunkData.background.length + chunkData.foreground.length) % 4)
+      );
+      return Buffer.concat([STAMP, sizes, chunkData.background, chunkData.foreground, filler]);
     }
   }
 
-  update(x: number, y: number, data: Buffer) {
-    this.db.saveForegroundLayer(x, y, data);
+  update(x: number, y: number, foreground: Buffer | null, background: Buffer | null) {
+    this.db.saveLayers(x, y, foreground, background);
   }
 }
 

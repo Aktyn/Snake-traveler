@@ -1,8 +1,8 @@
 import * as express from 'express';
 import * as cors from 'cors';
 import * as bodyParser from 'body-parser';
+import * as multer from 'multer';
 import * as Worlds from './worlds';
-// import './database';
 
 const port = 4000;
 
@@ -10,14 +10,21 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(
+/*app.use(
   bodyParser.raw({
     type: 'image/png',
     limit: '10mb'
   })
-);
+);*/
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+const chunkUpload = upload.fields([
+  { name: 'foreground', maxCount: 1 },
+  { name: 'background', maxCount: 1 }
+]);
 
-const checkParams = (object: { [_: string]: any }, ...params: string[]) => params.every(param => param in object);
+const checkParams = (object?: { [_: string]: any }, ...params: string[]) =>
+  !!object && params.every(param => param in object);
 
 app.get('/worlds', (_, res) => {
   res.json(Worlds.getList());
@@ -68,8 +75,8 @@ app.get('/worlds/:worldId/chunks/:x/:y/:size/:biomes', async (req, res) => {
   }
 });
 
-app.put('/worlds/:worldId/chunks/:x/:y', (req, res) => {
-  if (!checkParams(req.params, 'worldId', 'x', 'y') || !(req.body instanceof Buffer)) {
+app.put('/worlds/:worldId/chunks/:x/:y', chunkUpload, (req, res) => {
+  if (!checkParams(req.params, 'worldId', 'x', 'y')) {
     res.status(422).send('Incorrect request parameters');
     return;
   }
@@ -80,7 +87,12 @@ app.put('/worlds/:worldId/chunks/:x/:y', (req, res) => {
       res.status(404).send('World with given id does not exists: ' + req.params.worldId);
       return;
     }
-    world.update(parseInt(req.params.x), parseInt(req.params.y), req.body);
+    world.update(
+      parseInt(req.params.x),
+      parseInt(req.params.y),
+      (req.files as any).foreground[0].buffer || null,
+      (req.files as any).background?.[0].buffer || null
+    );
     res.json({ success: true });
   } catch (e) {
     res.status(500).send(e.message);
