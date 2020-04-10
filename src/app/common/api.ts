@@ -26,6 +26,14 @@ const METHOD = {
   } as RequestInit
 };
 
+export interface ChunkUpdateData {
+  worldId: string;
+  x: number;
+  y: number;
+  foregroundData: Blob;
+  //backgroundData?: Blob;
+}
+
 const API = {
   fetchChunk(worldId: string, x: number, y: number, size: number): Promise<ArrayBuffer> {
     return fetch(`${BASE_URL}/worlds/${worldId}/chunks/${x}/${y}/${size}/${Biomes.length}`, METHOD.GET).then(res =>
@@ -33,17 +41,26 @@ const API = {
     );
   },
 
-  updateChunk(worldId: string, x: number, y: number, foregroundData: Blob, backgroundData?: Blob) {
+  updateChunks(data: ChunkUpdateData[]) {
     const fd = new FormData();
-    fd.append('foreground', foregroundData);
-    if (backgroundData) {
-      fd.append('background', backgroundData);
+    fd.append(
+      'data',
+      JSON.stringify({
+        worldId: data[0]?.worldId,
+        chunksPos: data.map(dt => ({ x: dt.x, y: dt.y }))
+      })
+    );
+    for (let i = 0; i < data.length; i++) {
+      fd.append('foreground', data[i].foregroundData, i.toString());
+      /*if (data[i].backgroundData) {
+        fd.append('background', data[i].backgroundData as Blob, i.toString());
+      }*/
     }
 
-    return fetch(`${BASE_URL}/worlds/${worldId}/chunks/${x}/${y}`, {
+    return fetch(`${BASE_URL}/worlds/chunks`, {
       ...METHOD.PUT,
-      body: fd //JSON.stringify({ x, y })
-    }).then(res => res.json());
+      body: fd
+    });
   },
 
   getWorlds(): Promise<WorldSchema[]> {

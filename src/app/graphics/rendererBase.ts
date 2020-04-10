@@ -43,6 +43,8 @@ export default class RendererBase {
     this.resize();
   }
 
+  destroy() {}
+
   protected resize(w = window.innerWidth, h = window.innerHeight) {
     this.aspect = w / h;
 

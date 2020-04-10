@@ -3,10 +3,11 @@ import Matrix2D from '../common/math/matrix2d';
 import { ExtendedTexture } from '../graphics/texture';
 import { Biomes } from '../common/colors';
 import { mix } from '../common/utils';
-import API from '../common/api';
+import API, { ChunkUpdateData } from '../common/api';
 import { WorldSchema } from '../common/schemas';
 
 const STAMP = Buffer.from('mgdlnkczmr');
+const MAX_BATCH_SIZE = 32;
 
 const loadingChunks: Set<Chunk> = new Set();
 
@@ -20,7 +21,7 @@ export const postGenerateQueue = (() => {
       clearTimeout(generateTimeout);
     }
 
-    if (!loadingChunks.size) {
+    if (!loadingChunks.size || loadingChunks.size > 8) {
       if (registeredChunks.length) {
         const chunk = registeredChunks.shift();
         setTimeout(
@@ -28,7 +29,7 @@ export const postGenerateQueue = (() => {
             chunk?.postGenerate();
             setQueueTimeout();
           },
-          chunk?.isRestored() ? 0 : 1000 / 30
+          chunk?.isRestored() ? 0 : 1000 / 10
         );
       } else {
         //console.log('chunks batch fully generated');
@@ -56,14 +57,8 @@ export const postGenerateQueue = (() => {
 })();
 
 export const saveQueue = (() => {
-  interface ChunkToSave {
-    chunk: Chunk;
-    saveBackground?: boolean;
-  }
-
-  const registeredChunks = new Set<ChunkToSave>();
-  let saveTimeout: NodeJS.Timeout | null = null;
-  let savingChunk: ChunkToSave | undefined;
+  const registeredChunks = new Set<Chunk>();
+  let queueTimeout: NodeJS.Timeout | null = null;
 
   function canvasToBlob(canvas: HTMLCanvasElement) {
     return new Promise<Blob>((resolve, reject) => {
@@ -77,46 +72,56 @@ export const saveQueue = (() => {
     });
   }
 
-  function setQueueTimeout() {
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
-    }
-
-    if (savingChunk || !registeredChunks.size) {
-      saveTimeout = null;
+  async function setQueueTimeout() {
+    if (!registeredChunks.size) {
+      //nothing more to save
+      queueTimeout = null;
       return;
     }
 
-    //TODO: update multiple chunks in single request
-    savingChunk = registeredChunks.values().next().value;
-
-    setTimeout(async () => {
-      if (!savingChunk) {
-        return;
+    const batchSize = Math.min(MAX_BATCH_SIZE, Math.max(1, (registeredChunks.size / 1) | 0));
+    const iterator = registeredChunks.values();
+    const savingChunks: Chunk[] = [];
+    for (let i = 0; i < batchSize; i++) {
+      const chunk = iterator.next().value;
+      if (!chunk) {
+        break;
       }
-      const foregroundData = await canvasToBlob(savingChunk.chunk.canvases.foreground);
-      registeredChunks.delete(savingChunk);
-      await API.updateChunk(
-        savingChunk.chunk.world.id,
-        savingChunk.chunk.x * Chunk.RESOLUTION,
-        savingChunk.chunk.y * Chunk.RESOLUTION,
-        foregroundData,
-        savingChunk.saveBackground ? await canvasToBlob(savingChunk.chunk.canvases.background) : undefined
-      );
+      savingChunks.push(chunk);
+    }
+    if (!savingChunks.length) {
+      return;
+    }
 
-      //console.log('saved', savingChunk?.x, savingChunk?.y);
-      savingChunk = undefined;
-      setQueueTimeout();
-    }, 1000 / 60);
+    const requestPayload: ChunkUpdateData[] = [];
 
-    saveTimeout = setTimeout(setQueueTimeout, 1000 / 60);
+    for (const chunkData of savingChunks) {
+      const foregroundData = await canvasToBlob(chunkData.canvases.foreground);
+
+      requestPayload.push({
+        worldId: chunkData.world.id,
+        x: chunkData.x * Chunk.RESOLUTION,
+        y: chunkData.y * Chunk.RESOLUTION,
+        foregroundData
+        //backgroundData: chunkData.saveBackground ? await canvasToBlob(chunkData.chunk.canvases.background) : undefined
+      });
+    }
+
+    for (const chunk of savingChunks) {
+      registeredChunks.delete(chunk);
+    }
+    //console.log('updating chunks:', requestPayload.length);
+    await API.updateChunks(requestPayload);
+
+    queueTimeout = setTimeout(setQueueTimeout, 1000 / 10);
   }
 
   return {
-    registerChunk(chunkToSave: ChunkToSave) {
-      if (!registeredChunks.has(chunkToSave)) {
-        registeredChunks.add(chunkToSave);
-        setQueueTimeout();
+    registerChunk(chunkToSave: Chunk) {
+      registeredChunks.add(chunkToSave);
+
+      if (!queueTimeout) {
+        queueTimeout = setTimeout(setQueueTimeout, 1000 / 60);
       }
     }
   };
@@ -339,50 +344,34 @@ export default class Chunk extends Vec2 {
         //this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
       }
 
-      //little blur for foreground texture
-      /*const blurRadius = 3;
-      const maxNeighbors = (blurRadius * 2 + 1) ** 2 - 1;
-      for (let x = 0; x < Chunk.RESOLUTION; x++) {
-        for (let y = 0; y < Chunk.RESOLUTION; y++) {
-          const i = x + y * Chunk.RESOLUTION;
-
-          let neighbors = 0; //0 -> (blurRadius*2+1)**2 - 1
-          for (let yy = -blurRadius; yy <= blurRadius; yy++) {
-            for (let xx = -blurRadius; xx <= blurRadius; xx++) {
-              if (
-                x + xx < 0 ||
-                x + xx >= Chunk.RESOLUTION ||
-                y + yy < 0 ||
-                y + yy >= Chunk.RESOLUTION ||
-                (xx === 0 && yy === 0)
-              ) {
-                neighbors++;
-                continue;
-              }
-              const j = x + xx + (y + yy) * Chunk.RESOLUTION;
-              if (backgroundImgData.data[j * 4 + 3] > 0) {
-                neighbors++;
-              }
-            }
-          }
-
-          foregroundImgData.data[i * 4 + 3] = (backgroundImgData.data[i * 4 + 3] * (neighbors / maxNeighbors)) | 0;
-          backgroundImgData.data[i * 4 + 3] = 255;
-        }
-      }*/
-
       this.updateCanvases();
-      saveQueue.registerChunk({ chunk: this, saveBackground: true });
+      //saveQueue.registerChunk({ chunk: this, saveBackground: true });
     } else {
-      const buff = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT * 2);
-      this.data.copy(buff, 0, STAMP.length, STAMP.length + buff.length);
+      const bgData = new Float32Array(
+        this.data.buffer.slice(STAMP.length, STAMP.length + Chunk.RESOLUTION * Chunk.RESOLUTION * 4)
+      );
 
-      //[backgroundSize, foregroundSize]
-      const sizes = new Uint32Array(buff.buffer);
+      for (let i = 0; i < Chunk.RESOLUTION * Chunk.RESOLUTION; i++) {
+        const valueB = bgData[i];
+        const biomeB = Math.max(0, valueB | 0);
+        const nextBiomeB = Math.min(Biomes.length - 1, biomeB + 1);
+        const mixFactorB = valueB - biomeB;
 
-      const foregroundOffset = STAMP.length + sizes.byteLength + sizes[0];
+        for (let c = 0; c < 3; c++) {
+          this.backgroundImgData.data[i * 4 + c] =
+            (mix(Biomes[biomeB].background.buffer[c], Biomes[nextBiomeB].background.buffer[c], mixFactorB) * 255) | 0;
+        }
 
-      const fgLoading = this.bufferToImage(this.data.subarray(foregroundOffset)).then(img => {
+        this.backgroundImgData.data[i * 4 + 3] = 255;
+      }
+      this.context.background.putImageData(this.backgroundImgData, 0, 0);
+
+      this.updateFlags.needBackgroundTextureUpdate = true;
+
+      ////////////////////////////////////////////////////
+      const foregroundOffset = STAMP.length + Chunk.RESOLUTION * Chunk.RESOLUTION * 4;
+
+      this.bufferToImage(this.data.subarray(foregroundOffset)).then(img => {
         this.context.foreground.clearRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
         this.context.foreground.globalCompositeOperation = 'source-over';
         this.context.foreground.drawImage(img, 0, 0);
@@ -391,26 +380,8 @@ export default class Chunk extends Vec2 {
         this.context.foreground.globalCompositeOperation = 'destination-out';
 
         this.updateFlags.needForegroundTextureUpdate = true;
+        this.loaded = true;
       });
-
-      const bgLoading = this.bufferToImage(this.data.subarray(STAMP.length + sizes.byteLength, foregroundOffset)).then(
-        img => {
-          this.context.background.clearRect(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
-          this.context.background.globalCompositeOperation = 'source-over';
-          this.context.background.drawImage(img, 0, 0);
-          this.backgroundImgData = this.context.background.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
-
-          this.context.background.globalCompositeOperation = 'destination-out';
-
-          this.updateFlags.needBackgroundTextureUpdate = true;
-        }
-      );
-
-      await Promise.all([fgLoading, bgLoading])
-        .then(() => {
-          this.loaded = true;
-        })
-        .catch(console.error);
     }
 
     this.postGenerated = true;
@@ -435,7 +406,7 @@ export default class Chunk extends Vec2 {
       this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION); //TODO: optimize because it takes about 2 ms
       this.updateFlags.needForegroundImageDataUpdate = false;
 
-      saveQueue.registerChunk({ chunk: this });
+      saveQueue.registerChunk(this);
     }
 
     if (this.updateFlags.needBackgroundTextureUpdate) {

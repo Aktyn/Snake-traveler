@@ -24,6 +24,12 @@ export default class Core {
     window.addEventListener('keyup', this.keyUpListener);
   }
 
+  private unloadControls() {
+    window.removeEventListener('mousewheel', this.wheelListener);
+    window.removeEventListener('keydown', this.keyDownListener);
+    window.removeEventListener('keyup', this.keyUpListener);
+  }
+
   private onWheel(event: Event) {
     this.map?.zoom((event as MouseWheelEvent).deltaY / 53);
   }
@@ -99,5 +105,13 @@ export default class Core {
 
     this.startUpdateLoop();
     this.initControls();
+  }
+
+  unload() {
+    this.unloadControls();
+    if (this.map) {
+      this.map.destroy();
+      this.map = null;
+    }
   }
 }

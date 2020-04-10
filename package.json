@@ -35,7 +35,8 @@
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",
     "nodemon": "^2.0.2",
-    "prettier": "^1.19.1"
+    "prettier": "^1.19.1",
+    "workerize-loader": "^1.1.0"
   },
   "scripts": {
     "server:dev": "nodemon --watch /server/**/* --exec \"tsc -p ./server/tsconfig.json && node ./server_dist/main.js\" -e ts",

@@ -12,6 +12,19 @@ import ObjectBase from './objectBase';
 import Bullet from './bullet';
 import Painter from './painter';
 import { WorldSchema } from '../common/schemas';
+//@ts-ignore
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import syncWorker from 'workerize-loader!./serverSyncWorker';
+
+interface ChunkToSave {
+  chunk: Chunk;
+  saveBackground?: boolean;
+}
+
+interface SyncWorkerI extends Worker {
+  run: () => void;
+  registerChunkToSave: (chunkToSave: ChunkToSave) => void;
+}
 
 const getEmptyChunksGrid = (): Chunk[][] =>
   new Array(Chunk.GRID_SIZE_X * 2 + 1).fill(null).map(col => new Array(Chunk.GRID_SIZE_Y * 2 + 1).fill(null));
@@ -19,6 +32,7 @@ const getEmptyChunksGrid = (): Chunk[][] =>
 export default class WorldMap extends CollisionDetector implements Updatable {
   public readonly entities: Entities;
   private readonly world: WorldSchema;
+  private readonly syncWorker: SyncWorkerI;
 
   private cam: Camera;
   private targetPlayer: Player | null = null;
@@ -42,7 +56,19 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
     this.cam = new Camera(this.centerChunkPos.x * Chunk.SIZE * 2, -this.centerChunkPos.y * Chunk.SIZE * 2);
 
+    this.syncWorker = syncWorker();
+    this.syncWorker.run();
+
     this.reloadChunks().catch(console.error);
+
+    /*this.syncWorker.addEventListener('message', (message: any) => {
+      console.log('New Message: ', message.data);
+    });*/
+  }
+
+  destroy() {
+    //this.syncWorker.removeEventListener('message', func);
+    this.syncWorker.terminate();
   }
 
   getCenter() {

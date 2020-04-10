@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { dataFolder } from './external';
 import Generator from './generator';
-import WorldDatabase from './worldDatabase';
+import WorldDatabase, { ChunkUpdateData } from './worldDatabase';
 
 //const STAMP = Buffer.from(Float32Array.from(Buffer.from('mgdlnkczmr')).buffer);
 const STAMP = Buffer.from('mgdlnkczmr');
@@ -45,24 +45,23 @@ class World {
   }
 
   async getChunk(x: number, y: number, size: number, biomes: number) {
-    const chunkData = await this.db.getForegroundLayer(x, y).catch(() => {});
+    const { foreground: chunkData } = (await this.db.getForegroundLayer(x, y).catch(() => {})) || {};
 
-    if (!chunkData || !chunkData.foreground || !chunkData.background) {
+    if (!chunkData) {
       return Generator.generateChunk(this.simplex, x, y, size, biomes);
       //chunkData = Generator.generateChunk(this.simplex, x, y, size, biomes);
       //setTimeout(() => this.db.saveForegroundLayer(x, y, zlib.gzipSync(chunkData as Buffer, compressionOptions)));
     } else {
-      //const background = Generator.generateChunk(this.simplex, x, y, size, biomes, true);
-      const sizes = Buffer.from(new Uint32Array([chunkData.background.length, chunkData.foreground.length]).buffer);
-      const filler = Buffer.alloc(
-        4 - ((STAMP.length + sizes.length + chunkData.background.length + chunkData.foreground.length) % 4)
-      );
-      return Buffer.concat([STAMP, sizes, chunkData.background, chunkData.foreground, filler]);
+      const background = Generator.generateChunk(this.simplex, x, y, size, biomes, true);
+      //const sizes = Buffer.from(new Uint32Array([background.length, chunkData.length]).buffer);
+      //const filler = Buffer.alloc(4 - ((STAMP.length + /*sizes.length + */background.length + chunkData.length) % 4));
+      //return Buffer.concat([STAMP, sizes, background, chunkData, filler]);
+      return Buffer.concat([STAMP, background, chunkData]);
     }
   }
 
-  update(x: number, y: number, foreground: Buffer | null, background: Buffer | null) {
-    this.db.saveLayers(x, y, foreground, background);
+  update(data: ChunkUpdateData[]) {
+    this.db.saveLayers(data);
   }
 }
 

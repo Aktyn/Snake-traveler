@@ -2,25 +2,24 @@ import * as express from 'express';
 import * as cors from 'cors';
 import * as bodyParser from 'body-parser';
 import * as multer from 'multer';
+import * as path from 'path';
 import * as Worlds from './worlds';
+import { ChunkUpdateData } from './worldDatabase';
 
 const port = 4000;
+const MAX_BATCH_SIZE = 32;
 
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-/*app.use(
-  bodyParser.raw({
-    type: 'image/png',
-    limit: '10mb'
-  })
-);*/
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const chunkUpload = upload.fields([
-  { name: 'foreground', maxCount: 1 },
-  { name: 'background', maxCount: 1 }
+  { name: 'data', maxCount: 1 },
+  { name: 'foreground', maxCount: MAX_BATCH_SIZE }
+  //{ name: 'background', maxCount: MAX_BATCH_SIZE }
 ]);
 
 const checkParams = (object?: { [_: string]: any }, ...params: string[]) =>
@@ -75,24 +74,35 @@ app.get('/worlds/:worldId/chunks/:x/:y/:size/:biomes', async (req, res) => {
   }
 });
 
-app.put('/worlds/:worldId/chunks/:x/:y', chunkUpload, (req, res) => {
-  if (!checkParams(req.params, 'worldId', 'x', 'y')) {
+app.put('/worlds/chunks', chunkUpload, (req, res) => {
+  if (!checkParams(req.body, 'data')) {
     res.status(422).send('Incorrect request parameters');
     return;
   }
 
   try {
-    const world = Worlds.getWorld(req.params.worldId);
+    const data: { worldId: string; chunksPos: { x: number; y: number }[] } = JSON.parse(req.body.data);
+
+    const world = Worlds.getWorld(data.worldId);
     if (!world) {
-      res.status(404).send('World with given id does not exists: ' + req.params.worldId);
+      res.status(404).send('World with given id does not exists: ' + data.worldId);
       return;
     }
-    world.update(
-      parseInt(req.params.x),
-      parseInt(req.params.y),
-      (req.files as any).foreground[0].buffer || null,
-      (req.files as any).background?.[0].buffer || null
+
+    //let fi = 0;
+    //let bi = 0;
+    const chunksUpdateData = data.chunksPos.map(
+      ({ x, y }, index) =>
+        ({
+          x,
+          y,
+          foreground: (req.files as any).foreground[index].buffer || null
+          //background: (req.files as any).background?.[bi++]?.buffer || null
+        } as ChunkUpdateData)
     );
+
+    world.update(chunksUpdateData);
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).send(e.message);
@@ -100,3 +110,5 @@ app.put('/worlds/:worldId/chunks/:x/:y', chunkUpload, (req, res) => {
 });
 
 app.listen(port, () => console.log(`Server listening on port: ${port}!`));
+
+app.use(express.static(path.join(__dirname, '..', 'build')));

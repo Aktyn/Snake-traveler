@@ -3,11 +3,19 @@ import * as fs from 'fs';
 
 const sqlite3 = sqlite.verbose();
 
+export interface ChunkUpdateData {
+  x: number;
+  y: number;
+  foreground: Buffer | null;
+  //background: Buffer | null;
+}
+
 export default class WorldDatabase {
   private readonly filePath: string;
   private readonly db: sqlite.Database;
 
-  private layersInsertQuery: sqlite.Statement | null = null;
+  private layerInsertQuery: sqlite.Statement | null = null;
+  //private layersInsertQueryNoBG: sqlite.Statement | null = null;
 
   constructor(filePath: string) {
     this.filePath = filePath;
@@ -35,7 +43,6 @@ export default class WorldDatabase {
         x INTEGER NOT NULL,
         y INTEGER NOT NULL,
         foreground BLOB,
-        background BLOB,
         PRIMARY KEY("x","y")
       )`);
     });
@@ -45,9 +52,9 @@ export default class WorldDatabase {
     });
   }
 
-  async getForegroundLayer(x: number, y: number): Promise<{ foreground: Buffer | null; background: Buffer | null }> {
+  async getForegroundLayer(x: number, y: number): Promise<{ foreground: Buffer | null }> {
     return new Promise((resolve, reject) => {
-      const stmt = this.db.prepare('SELECT foreground, background FROM chunks WHERE x=? AND y=? LIMIT 1');
+      const stmt = this.db.prepare('SELECT foreground FROM chunks WHERE x=? AND y=? LIMIT 1');
       stmt.get([x, y], function(err: Error, row: any) {
         if (err) {
           reject(err);
@@ -59,35 +66,57 @@ export default class WorldDatabase {
     });
   }
 
-  saveLayers(x: number, y: number, foreground: Buffer | null, background: Buffer | null) {
+  saveLayers(data: ChunkUpdateData[]) {
     setTimeout(() => {
       try {
-        if (background) {
-          this.layersInsertQuery = this.db.prepare('INSERT OR REPLACE INTO chunks VALUES (?,?,?,?)');
-          this.layersInsertQuery.run([x | 0, y | 0, foreground, background], function(err) {
+        this.layerInsertQuery = this.db.prepare('INSERT OR REPLACE INTO chunks VALUES (?,?,?)');
+        /*this.layersInsertQueryNoBG = this.db.prepare(
+          'INSERT OR REPLACE INTO chunks VALUES ($x,$y,$foreground, (SELECT background from chunks as ch2 WHERE ch2.x=$x AND ch2.y=$y))'
+        );*/
+        //let layersWithBgUpdate = false;
+        //let layersWithoutBgUpdate = false;
+
+        for (const chunkData of data) {
+          this.layerInsertQuery.run([chunkData.x | 0, chunkData.y | 0, chunkData.foreground], function(err) {
             if (err) {
               console.error(err);
             }
           });
-        } else {
-          this.layersInsertQuery = this.db.prepare(
-            'INSERT OR REPLACE INTO chunks VALUES ($x,$y,$foreground, (SELECT background from chunks as ch2 WHERE ch2.x=$x AND ch2.y=$y))'
-          );
-          this.layersInsertQuery.run(
-            {
-              $x: x | 0,
-              $y: y | 0,
-              $foreground: foreground
-            },
-            function(err) {
-              if (err) {
-                console.error(err);
+          /*if (chunkData.background) {
+            layersWithBgUpdate = true;
+            this.layersInsertQuery.run(
+              [chunkData.x | 0, chunkData.y | 0, chunkData.foreground, chunkData.background],
+              function(err) {
+                if (err) {
+                  console.error(err);
+                }
               }
-            }
-          );
+            );
+          } else {
+            layersWithoutBgUpdate = true;
+
+            this.layersInsertQueryNoBG.run(
+              {
+                $x: chunkData.x | 0,
+                $y: chunkData.y | 0,
+                $foreground: chunkData.foreground
+              },
+              function(err) {
+                if (err) {
+                  console.error(err);
+                }
+              }
+            );
+          }*/
         }
 
-        this.layersInsertQuery.finalize(); //TODO: delay finalization to handle multiple save requests
+        this.layerInsertQuery.finalize();
+        /*if (layersWithBgUpdate) {
+          this.layersInsertQuery.finalize();
+        }
+        if (layersWithoutBgUpdate) {
+          this.layersInsertQueryNoBG.finalize();
+        }*/
       } catch (e) {
         console.error(e);
       }

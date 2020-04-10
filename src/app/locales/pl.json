@@ -2,6 +2,7 @@
   "availableWorlds": "Dostępne światy",
   "worldCreator": "Generowanie nowego świata",
   "noAvailableWorlds": "Brak dostępnych światów",
+  "loadingMap": "Ładowanie mapy",
   "action": {
     "play": "Graj",
     "generateWorld": "Generuj świat",

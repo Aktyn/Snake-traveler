@@ -12,8 +12,11 @@ import { registerDebugger } from '../debugger';
 import Spinner from '../gui/Spinner';
 import Worlds from './Worlds';
 import { WorldSchema } from '../common/schemas';
+import useTranslation from './hooks/useTranslation';
 
 function App() {
+  const t = useTranslation();
+
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [chosenWorld, setChosenWorld] = useState<WorldSchema | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -36,7 +39,15 @@ function App() {
       registerDebugger(setDebugText);
       setAssetsLoaded(true);
     });
-    return () => console.log('App closed');
+    return () => {
+      renderer?.destroy();
+      setRenderer(null);
+
+      core?.unload();
+
+      console.log('App closed');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -79,7 +90,7 @@ function App() {
         >
           <div>
             <Spinner />
-            <div>Generating map</div>
+            <div>{t('loadingMap')}</div>
           </div>
         </div>
       )}

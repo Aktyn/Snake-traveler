@@ -55,7 +55,7 @@ function WorldSelectionView({
       setAvailableWorlds(res);
       setSelectedWorld(res[0] || null);
 
-      //onChoice(res[0]); //TEMP
+      onChoice(res[0]); //TEMP
     });
   }
 
