@@ -17,7 +17,7 @@ export function mix(v1: number, v2: number, factor: number) {
   return v1 * (1.0 - factor) + v2 * factor;
 }
 
-function shortAngleDist(angle: number, targetAngle: number) {
+export function shortAngleDist(angle: number, targetAngle: number) {
   const fullAngle = Math.PI * 2;
   const angleDifference = (targetAngle - angle) % fullAngle;
   return ((2 * angleDifference) % fullAngle) - angleDifference;

@@ -7,7 +7,7 @@ const POSITION_SPEED = 2;
 
 export default class Camera extends Vec2 implements Updatable {
   public readonly buffer = new Float32Array([0, 0, 1]);
-  private visiblePos = new Vec2(); //for smoothness
+  private readonly visiblePos = new Vec2(); //for smoothness
 
   constructor(x: number, y: number) {
     super(x, y);
@@ -17,6 +17,14 @@ export default class Camera extends Vec2 implements Updatable {
   private updateBuffer() {
     this.buffer[0] = this.visiblePos.x;
     this.buffer[1] = this.visiblePos.y;
+  }
+
+  get visibleX() {
+    return this.visiblePos.x;
+  }
+
+  get visibleY() {
+    return this.visiblePos.y;
   }
 
   zoom(factor: number) {}

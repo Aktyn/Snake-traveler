@@ -12,5 +12,13 @@
   "form": {
     "name": "Nazwa",
     "seed": "Ziarno losowości"
+  },
+  "title": {
+    "settings": "Ustawienia"
+  },
+  "settings": {
+    "steering": "Sterowanie",
+    "keyboard": "Klawiatura",
+    "mouse": "Mysz"
   }
 }

@@ -336,8 +336,12 @@ export default class Chunk extends Vec2 {
         for (let c = 0; c < 3; c++) {
           this.backgroundImgData.data[i * 4 + c] =
             (mix(Biomes[biomeB].background.buffer[c], Biomes[nextBiomeB].background.buffer[c], mixFactorB) * 255) | 0;
-          this.foregroundImgData.data[i * 4 + c] =
-            (mix(Biomes[biomeF].foreground.buffer[c], Biomes[nextBiomeF].foreground.buffer[c], mixFactorF) * 255) | 0;
+        }
+        if (this.foregroundImgData.data[i * 4 + 3] > 0) {
+          for (let c = 0; c < 3; c++) {
+            this.foregroundImgData.data[i * 4 + c] =
+              (mix(Biomes[biomeF].foreground.buffer[c], Biomes[nextBiomeF].foreground.buffer[c], mixFactorF) * 255) | 0;
+          }
         }
 
         //this.backgroundImgData.data[i * 4 + 3] = 255; //this.data[i] < 0 ? 255 : 0; //this.data[i] & 0x80 ? 255 : 0; //255;

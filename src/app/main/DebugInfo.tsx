@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { registerDebugger } from '../debugger';
 
-const DebugInfo = (props: { content: string[] }) => {
+const DebugInfo = () => {
+  const [debugText, setDebugText] = useState<string[]>([]);
+
+  useEffect(() => {
+    registerDebugger(setDebugText);
+  }, []);
+
   return (
     <span className="debug-info">
-      {props.content.map((line, index) => (
+      {debugText.map((line, index) => (
         <div key={index}>{line}</div>
       ))}
     </span>

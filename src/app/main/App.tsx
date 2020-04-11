@@ -8,11 +8,16 @@ import DebugInfo from './DebugInfo';
 import { isWebGL2Available } from '../common/utils';
 import SceneRenderer from '../game/sceneRenderer';
 import RendererBase from '../graphics/rendererBase';
-import { registerDebugger } from '../debugger';
-import Spinner from '../gui/Spinner';
+import Spinner from './components/Spinner';
 import Worlds from './Worlds';
 import { WorldSchema } from '../common/schemas';
 import useTranslation from './hooks/useTranslation';
+
+export interface AppContextSchema {
+  setGamePaused: (paused: boolean) => void;
+}
+
+export const AppContext = React.createContext<AppContextSchema>({} as AppContextSchema);
 
 function App() {
   const t = useTranslation();
@@ -20,12 +25,16 @@ function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [chosenWorld, setChosenWorld] = useState<WorldSchema | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [debugText, setDebugText] = useState<string[]>([]);
+
   const [renderer, setRenderer] = useState<RendererBase | null>(null);
 
   const [core, setCore] = useState<Core | null>(null);
 
   const webGL2Available = useMemo(isWebGL2Available, []);
+
+  const definedContext: AppContextSchema = {
+    setGamePaused: paused => core?.setPaused(paused)
+  };
 
   useEffect(() => {
     onAssetsLoaded(() => {
@@ -35,8 +44,6 @@ function App() {
       const core = new Core(renderer);
       setCore(core);
 
-      //core.init(() => setMapLoaded(true));
-      registerDebugger(setDebugText);
       setAssetsLoaded(true);
     });
     return () => {
@@ -78,9 +85,11 @@ function App() {
 
   return (
     <div className="layout">
-      {renderer && <Renderer renderer={renderer} />}
-      <GUI />
-      <DebugInfo content={debugText} />
+      <AppContext.Provider value={definedContext}>
+        {renderer && <Renderer renderer={renderer} />}
+        <GUI />
+      </AppContext.Provider>
+      <DebugInfo />
       {!mapLoaded && (
         <div
           className="fullscreen center-content"
