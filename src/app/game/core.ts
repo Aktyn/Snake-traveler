@@ -20,6 +20,7 @@ export default class Core {
   private readonly mouseDownListener = this.onMouseDown.bind(this);
   private readonly mouseUpListener = this.onMouseUp.bind(this);
   private readonly mouseMoveListener = this.onMouseMove.bind(this);
+  private readonly mouseWheelListener = this.onMouseWheel.bind(this);
 
   constructor(renderer: SceneRenderer) {
     this.renderer = renderer;
@@ -34,7 +35,8 @@ export default class Core {
     window.addEventListener('mouseup', this.mouseUpListener);
     window.addEventListener('mousemove', this.mouseMoveListener);
 
-    //TODO: change speed with mousewheel event and target speed property
+    window.addEventListener('mousewheel', this.mouseWheelListener);
+    window.addEventListener('DOMMouseScroll', this.mouseWheelListener);
   }
 
   private unloadControls() {
@@ -45,6 +47,9 @@ export default class Core {
     window.removeEventListener('mousedown', this.mouseDownListener);
     window.removeEventListener('mouseup', this.mouseUpListener);
     window.removeEventListener('mousemove', this.mouseMoveListener);
+
+    window.removeEventListener('mousewheel', this.mouseWheelListener);
+    window.removeEventListener('DOMMouseScroll', this.mouseWheelListener);
   }
 
   private onWheel(event: Event) {
@@ -106,6 +111,13 @@ export default class Core {
   private onMouseMove(event: MouseEvent) {
     this.cursorPos.x = event.clientX;
     this.cursorPos.y = event.clientY;
+  }
+
+  private onMouseWheel(event: Event) {
+    const e = window.event || event;
+    //@ts-ignore
+    const delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail));
+    this.map?.camera.zoom(delta);
   }
 
   private updateMouseSteering() {

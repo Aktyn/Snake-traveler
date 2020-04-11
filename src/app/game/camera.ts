@@ -4,10 +4,16 @@ import ObjectBase from './objectBase';
 
 const DIFF_TOLERANCE = 0.001;
 const POSITION_SPEED = 2;
+const ZOOM_SCALE = 0.1;
+const ZOOM_SPEED = 2;
+const MAX_ZOOM = 1.5;
+const MIN_ZOOM = -2; //TODO: adjust it
 
 export default class Camera extends Vec2 implements Updatable {
   public readonly buffer = new Float32Array([0, 0, 1]);
   private readonly visiblePos = new Vec2(); //for smoothness
+  private _zoom = 0;
+  private visibleZoom = 0;
 
   constructor(x: number, y: number) {
     super(x, y);
@@ -27,7 +33,9 @@ export default class Camera extends Vec2 implements Updatable {
     return this.visiblePos.y;
   }
 
-  zoom(factor: number) {}
+  zoom(factor: number) {
+    this._zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this._zoom - factor * ZOOM_SCALE));
+  }
 
   follow(target: ObjectBase | Vec2) {
     super.set(target.x, target.y);
@@ -41,5 +49,11 @@ export default class Camera extends Vec2 implements Updatable {
     }
 
     this.updateBuffer();
+
+    const zoomDiff = this._zoom - this.visibleZoom;
+    if (Math.abs(zoomDiff) > DIFF_TOLERANCE) {
+      this.visibleZoom += zoomDiff * delta * ZOOM_SPEED;
+    }
+    this.buffer[2] = 2 ** this.visibleZoom;
   }
 }
