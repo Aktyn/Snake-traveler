@@ -4,39 +4,69 @@ import { WorldSchema } from './schemas';
 
 const BASE_URL = `http://localhost:${Config.SERVER_PORT}`;
 
+export enum CustomError {
+  TIMEOUT
+}
+
 const METHOD = {
   GET: {
-    method: 'GET',
-    mode: 'cors'
+    method: 'GET'
   } as RequestInit,
   DELETE: {
-    method: 'DELETE',
-    mode: 'cors'
+    method: 'DELETE'
   } as RequestInit,
   POST: {
-    method: 'POST',
-    mode: 'cors',
-    headers: {
-      'Content-Type': 'application/json'
-    }
+    method: 'POST'
   } as RequestInit,
   PUT: {
-    method: 'PUT',
-    mode: 'cors'
+    method: 'PUT'
+  } as RequestInit,
+  PATCH: {
+    method: 'PATCH'
   } as RequestInit
 };
+
+for (const methodName in METHOD) {
+  Object.assign(METHOD[methodName as keyof typeof METHOD], {
+    mode: 'cors'
+  } as RequestInit);
+}
 
 export interface ChunkUpdateData {
   worldId: string;
   x: number;
   y: number;
   foregroundData: Blob;
-  //backgroundData?: Blob;
 }
 
+const request = (
+  url: string,
+  method: RequestInit,
+  options?: { body?: string | FormData; headers?: Headers | Record<string, string> }
+) =>
+  new Promise<Response>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(CustomError.TIMEOUT);
+    }, 45 * 1000);
+
+    fetch(`${BASE_URL}${url}`, options ? { ...method, ...options } : method)
+      .then(res => {
+        clearTimeout(timeout);
+        resolve(res);
+      })
+      .catch(error => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+  });
+
 const API = {
+  ping() {
+    return request('/ping', METHOD.GET).then(res => res.text);
+  },
+
   fetchChunk(worldId: string, x: number, y: number, size: number): Promise<ArrayBuffer> {
-    return fetch(`${BASE_URL}/worlds/${worldId}/chunks/${x}/${y}/${size}/${Biomes.length}`, METHOD.GET).then(res =>
+    return request(`/worlds/${worldId}/chunks/${x}/${y}/${size}/${Biomes.length}`, METHOD.GET).then(res =>
       res.arrayBuffer()
     );
   },
@@ -57,24 +87,33 @@ const API = {
       }*/
     }
 
-    return fetch(`${BASE_URL}/worlds/chunks`, {
-      ...METHOD.PUT,
-      body: fd
+    return request(`/worlds/chunks`, METHOD.PUT, { body: fd });
+  },
+
+  updatePlayerPosition(worldId: string, x: number, y: number) {
+    return request(`/worlds/${worldId}/playerPos`, METHOD.PATCH, {
+      body: JSON.stringify({ x, y }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   },
 
   getWorlds(): Promise<WorldSchema[]> {
-    return fetch(`${BASE_URL}/worlds`, METHOD.GET).then(res => res.json());
+    return request('/worlds', METHOD.GET).then(res => res.json());
   },
 
   deleteWorld(worldId: string) {
-    return fetch(`${BASE_URL}/worlds/${worldId}`, METHOD.DELETE).then(res => res.text());
+    return request(`/worlds/${worldId}`, METHOD.DELETE).then(res => res.text());
   },
 
   generateWorld(name: string, seed: string) {
-    return fetch(`${BASE_URL}/worlds`, { ...METHOD.POST, body: JSON.stringify({ name, seed }) }).then(res =>
-      res.json()
-    );
+    return request(`/worlds`, METHOD.POST, {
+      body: JSON.stringify({ name, seed }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(res => res.json());
   }
 };
 

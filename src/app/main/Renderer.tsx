@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-import RendererBase from '../graphics/rendererBase';
+import RendererBase from '../game/graphics/rendererBase';
 
 const Renderer = ({ renderer }: { renderer: RendererBase }) => {
   const rendererRef = useRef<HTMLDivElement>(null);

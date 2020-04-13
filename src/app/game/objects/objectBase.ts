@@ -1,6 +1,6 @@
-import { Color, Palette } from './../common/colors';
-import Entities from './entities';
-import Matrix2D from '../common/math/matrix2d';
+import { Color, Palette } from '../../common/colors';
+import Entities from '../entities';
+import Matrix2D from '../../common/math/matrix2d';
 
 export default abstract class ObjectBase extends Matrix2D {
   private _color: Color = Palette.WHITE;

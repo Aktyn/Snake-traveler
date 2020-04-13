@@ -9,12 +9,17 @@
     "delete": "Usuń",
     "confirm": "Potwierdź"
   },
+  "status": {
+    "connected": "Połączono",
+    "serverUnreachable": "Serwer niedostępny"
+  },
   "form": {
     "name": "Nazwa",
     "seed": "Ziarno losowości"
   },
   "title": {
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "worlds": "Światy"
   },
   "settings": {
     "steering": "Sterowanie",

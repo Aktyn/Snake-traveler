@@ -1,4 +1,4 @@
-import DynamicObject from './dynamicObject';
+import DynamicObject from './objects/dynamicObject';
 import Chunk from './chunk';
 import Vec2 from '../common/math/vec2';
 import { getChunkAtPosition } from './common';

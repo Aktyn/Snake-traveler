@@ -1,6 +1,6 @@
-import { ExtendedTexture } from './../graphics/texture';
-import ObjectBase from './objectBase';
-import TextureModule from '../graphics/texture';
+import { ExtendedTexture } from './graphics/texture';
+import ObjectBase from './objects/objectBase';
+import TextureModule from './graphics/texture';
 import Assets from '../common/assets';
 
 export enum Layers {

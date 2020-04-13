@@ -6,13 +6,13 @@ import { dataFolder } from './external';
 import Generator from './generator';
 import WorldDatabase, { ChunkUpdateData } from './worldDatabase';
 
-//const STAMP = Buffer.from(Float32Array.from(Buffer.from('mgdlnkczmr')).buffer);
 const STAMP = Buffer.from('mgdlnkczmr');
 
 interface WorldSchema {
   id: string;
   name: string;
   seed: string;
+  playerPos: number[];
 }
 
 class World {
@@ -20,13 +20,15 @@ class World {
   private readonly name: string;
   private readonly seed: string;
   private readonly simplex: SimplexNoise;
+  private readonly playerPos: number[];
 
   public readonly db: WorldDatabase;
 
-  constructor(name: string, seed: string, id = uuid()) {
+  constructor(name: string, seed: string, playerPos = [0, 0], id = uuid()) {
     this.id = id;
     this.name = name;
     this.seed = seed;
+    this.playerPos = playerPos;
     this.simplex = new SimplexNoise(seed);
 
     this.db = new WorldDatabase(path.join(dataFolder, `${this.id}.sqlite3`));
@@ -40,7 +42,8 @@ class World {
     return {
       id: this.id,
       name: this.name,
-      seed: this.seed
+      seed: this.seed,
+      playerPos: this.playerPos
     };
   }
 
@@ -63,6 +66,13 @@ class World {
   update(data: ChunkUpdateData[]) {
     this.db.saveLayers(data);
   }
+
+  updatePlayerPos(x: number, y: number) {
+    this.playerPos[0] = x;
+    this.playerPos[1] = y;
+
+    updateWorldsList(worlds);
+  }
 }
 
 const worldsFile = path.join(dataFolder, 'worlds.json');
@@ -76,7 +86,7 @@ const worlds: Map<string, World> = (() => {
     const worldsList: WorldSchema[] = JSON.parse(fs.readFileSync(worldsFile, 'utf8'));
     const worldsMap: Map<string, World> = new Map();
     for (const world of worldsList) {
-      worldsMap.set(world.id, new World(world.name, world.seed, world.id));
+      worldsMap.set(world.id, new World(world.name, world.seed, world.playerPos, world.id));
     }
     return worldsMap;
   } catch (e) {

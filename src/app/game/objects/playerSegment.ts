@@ -1,10 +1,10 @@
 import DynamicObject from './dynamicObject';
-import { Updatable } from './updatable';
-import Entities from './entities';
+import { Updatable } from '../updatable';
+import Entities from '../entities';
 import { SensorShapes } from '../physics/sensor';
-import { Palette } from '../common/colors';
-import Vec2 from '../common/math/vec2';
-import { angleLerp } from '../common/utils';
+import { Palette } from '../../common/colors';
+import Vec2 from '../../common/math/vec2';
+import { angleLerp } from '../../common/utils';
 
 const DIFF_TOLERANCE = 0.001;
 const POSITION_SPEED = 12;

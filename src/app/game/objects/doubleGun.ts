@@ -1,5 +1,5 @@
 import WeaponBase from './weaponBase';
-import WorldMap from './worldMap';
+import WorldMap from '../worldMap';
 import Bullet from './bullet';
 
 const SHOOTING_FREQUENCY = 0.2; //shoot every x seconds

@@ -1,7 +1,7 @@
 import ObjectBase from './objectBase';
-import Entities from './entities';
+import Entities from '../entities';
 import PlayerSegment from './playerSegment';
-import { Updatable } from './updatable';
+import { Updatable } from '../updatable';
 
 const WEAPON_BASE_RELATIVE_SIZE = 1.333333;
 

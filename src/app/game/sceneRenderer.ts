@@ -1,13 +1,13 @@
 import { Layers, Entity } from './entities';
-import { ExtendedShader } from '../graphics/shader';
-import { VBO_I } from '../graphics/vbo';
-import RendererBase from '../graphics/rendererBase';
+import { ExtendedShader } from './graphics/shader';
+import { VBO_I } from './graphics/vbo';
+import RendererBase from './graphics/rendererBase';
 import Assets from '../common/assets';
 import WorldMap from './worldMap';
-import { ExtendedFramebuffer } from '../graphics/framebuffer';
+import { ExtendedFramebuffer } from './graphics/framebuffer';
 import { Palette } from '../common/colors';
 import Chunk from './chunk';
-import TextureModule from '../graphics/texture';
+import TextureModule from './graphics/texture';
 
 const rectData = {
   vertex: [-1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1],

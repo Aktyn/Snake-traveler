@@ -9,17 +9,10 @@
     grid-area: top-panel;
     padding: 8px;
     background-color: #0002;
-}
-
-.gui-main .settings-icon {
-  cursor: pointer;
-  transition: transform 0.25s ease-in-out;
-}
-.gui-main .settings-icon:hover {
-  transform: rotate(12deg);
-}
-.gui-main .settings-icon:active {
-  transform: rotate(12deg) scale(0.9);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .modal-container {

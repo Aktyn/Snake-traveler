@@ -25,6 +25,10 @@ const chunkUpload = upload.fields([
 const checkParams = (object?: { [_: string]: any }, ...params: string[]) =>
   !!object && params.every(param => param in object);
 
+app.get('/ping', (_, res) => {
+  res.send('pong');
+});
+
 app.get('/worlds', (_, res) => {
   res.json(Worlds.getList());
 });
@@ -89,20 +93,37 @@ app.put('/worlds/chunks', chunkUpload, (req, res) => {
       return;
     }
 
-    //let fi = 0;
-    //let bi = 0;
     const chunksUpdateData = data.chunksPos.map(
       ({ x, y }, index) =>
         ({
           x,
           y,
           foreground: (req.files as any).foreground[index].buffer || null
-          //background: (req.files as any).background?.[bi++]?.buffer || null
         } as ChunkUpdateData)
     );
 
     world.update(chunksUpdateData);
 
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
+app.patch('/worlds/:worldId/playerPos', (req, res) => {
+  if (!checkParams(req.params, 'worldId') || !checkParams(req.body, 'x', 'y')) {
+    res.status(422).send('Incorrect request parameters');
+    return;
+  }
+
+  try {
+    const world = Worlds.getWorld(req.params.worldId);
+    if (!world) {
+      res.status(404).send('World with given id does not exists: ' + req.params.worldId);
+      return;
+    }
+
+    world.updatePlayerPos(req.body.x, req.body.y);
     res.json({ success: true });
   } catch (e) {
     res.status(500).send(e.message);

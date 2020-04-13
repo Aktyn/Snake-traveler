@@ -1,5 +1,5 @@
-import Vec2 from '../common/math/vec2';
-import { Updatable } from './updatable';
+import Vec2 from '../../common/math/vec2';
+import { Updatable } from '../updatable';
 import ObjectBase from './objectBase';
 
 const DIFF_TOLERANCE = 0.001;

@@ -1,9 +1,9 @@
 import Vec2 from '../common/math/vec2';
 import Matrix2D from '../common/math/matrix2d';
-import { ExtendedTexture } from '../graphics/texture';
+import { ExtendedTexture } from './graphics/texture';
 import { Biomes } from '../common/colors';
 import { mix } from '../common/utils';
-import API, { ChunkUpdateData } from '../common/api';
+import API, { ChunkUpdateData, CustomError } from '../common/api';
 import { WorldSchema } from '../common/schemas';
 
 const STAMP = Buffer.from('mgdlnkczmr');
@@ -95,23 +95,31 @@ export const saveQueue = (() => {
 
     const requestPayload: ChunkUpdateData[] = [];
 
-    for (const chunkData of savingChunks) {
-      const foregroundData = await canvasToBlob(chunkData.canvases.foreground);
+    for (const chunk of savingChunks) {
+      registeredChunks.delete(chunk);
+      const foregroundData = await canvasToBlob(chunk.canvases.foreground);
 
       requestPayload.push({
-        worldId: chunkData.world.id,
-        x: chunkData.x * Chunk.RESOLUTION,
-        y: chunkData.y * Chunk.RESOLUTION,
+        worldId: chunk.world.id,
+        x: chunk.x * Chunk.RESOLUTION,
+        y: chunk.y * Chunk.RESOLUTION,
         foregroundData
         //backgroundData: chunkData.saveBackground ? await canvasToBlob(chunkData.chunk.canvases.background) : undefined
       });
     }
 
-    for (const chunk of savingChunks) {
+    /*for (const chunk of savingChunks) { //moved inside above loop
       registeredChunks.delete(chunk);
-    }
+    }*/
     //console.log('updating chunks:', requestPayload.length);
-    await API.updateChunks(requestPayload);
+    await API.updateChunks(requestPayload).catch(e => {
+      if (e === CustomError.TIMEOUT) {
+        //try again
+        for (const chunk of savingChunks) {
+          registeredChunks.add(chunk);
+        }
+      }
+    });
 
     queueTimeout = setTimeout(setQueueTimeout, 1000 / 10);
   }

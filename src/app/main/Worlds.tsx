@@ -3,8 +3,10 @@ import useTranslation from './hooks/useTranslation';
 import API from '../common/api';
 import { WorldSchema } from '../common/schemas';
 
-import '../../styles/worlds.css';
 import SafeButton from './components/SafeButton';
+import ConnectionStatus from '../gui/ConnectionStatus';
+
+import '../../styles/worlds.css';
 
 const getRandomSeed = (len = 16) => {
   const chars = 'abcdefghijklmnopqrstuvwxyz1234567890';
@@ -19,6 +21,7 @@ const getRandomSeed = (len = 16) => {
 
 interface WorldsProps {
   onChoice: (world: WorldSchema) => void;
+  isModalContent?: boolean;
 }
 
 function WorldFormHeader({ children }: PropsWithChildren<object>) {
@@ -55,7 +58,7 @@ function WorldSelectionView({
       setAvailableWorlds(res);
       setSelectedWorld(res[0] || null);
 
-      onChoice(res[0]); //TEMP
+      // onChoice(res[0]); //TEMP
     });
   }
 
@@ -150,16 +153,17 @@ function WorldCreatorView({ onReturn }: { onReturn: Function }) {
   );
 }
 
-export default function Worlds({ onChoice }: WorldsProps) {
+export default function Worlds({ onChoice, isModalContent }: WorldsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   return (
-    <div className="worlds form-container">
+    <div className={`worlds form-container${isModalContent ? ' no-box-shadow' : ''}`}>
       {showAddForm ? (
         <WorldCreatorView onReturn={() => setShowAddForm(false)} />
       ) : (
         <WorldSelectionView onAddButtonClick={() => setShowAddForm(true)} onChoice={onChoice} />
       )}
+      <ConnectionStatus hideIfConnected />
     </div>
   );
 }

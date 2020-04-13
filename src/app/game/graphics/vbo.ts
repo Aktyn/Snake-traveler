@@ -1,5 +1,5 @@
 import ShaderModule from './shader';
-import { assert } from '../common/utils';
+import { assert } from '../../common/utils';
 
 interface VertexBufferI {
   updateData(data: BufferSource): void;

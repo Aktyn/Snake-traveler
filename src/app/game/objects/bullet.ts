@@ -1,8 +1,8 @@
-import { SensorShapes } from './../physics/sensor';
+import { SensorShapes } from '../physics/sensor';
 import DynamicObject from './dynamicObject';
-import { Updatable } from './updatable';
-import Entities from './entities';
-import { Palette } from '../common/colors';
+import { Updatable } from '../updatable';
+import Entities from '../entities';
+import { Palette } from '../../common/colors';
 
 const BULLET_SIZE = 0.02;
 const BULLET_SPEED = 1;

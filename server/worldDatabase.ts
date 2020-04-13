@@ -67,22 +67,22 @@ export default class WorldDatabase {
   }
 
   saveLayers(data: ChunkUpdateData[]) {
-    setTimeout(() => {
-      try {
-        this.layerInsertQuery = this.db.prepare('INSERT OR REPLACE INTO chunks VALUES (?,?,?)');
-        /*this.layersInsertQueryNoBG = this.db.prepare(
+    //setTimeout(() => {
+    try {
+      this.layerInsertQuery = this.db.prepare('INSERT OR REPLACE INTO chunks VALUES (?,?,?)');
+      /*this.layersInsertQueryNoBG = this.db.prepare(
           'INSERT OR REPLACE INTO chunks VALUES ($x,$y,$foreground, (SELECT background from chunks as ch2 WHERE ch2.x=$x AND ch2.y=$y))'
         );*/
-        //let layersWithBgUpdate = false;
-        //let layersWithoutBgUpdate = false;
+      //let layersWithBgUpdate = false;
+      //let layersWithoutBgUpdate = false;
 
-        for (const chunkData of data) {
-          this.layerInsertQuery.run([chunkData.x | 0, chunkData.y | 0, chunkData.foreground], function(err) {
-            if (err) {
-              console.error(err);
-            }
-          });
-          /*if (chunkData.background) {
+      for (const chunkData of data) {
+        this.layerInsertQuery.run([chunkData.x | 0, chunkData.y | 0, chunkData.foreground], function(err) {
+          if (err) {
+            console.error(err);
+          }
+        });
+        /*if (chunkData.background) {
             layersWithBgUpdate = true;
             this.layersInsertQuery.run(
               [chunkData.x | 0, chunkData.y | 0, chunkData.foreground, chunkData.background],
@@ -108,18 +108,18 @@ export default class WorldDatabase {
               }
             );
           }*/
-        }
+      }
 
-        this.layerInsertQuery.finalize();
-        /*if (layersWithBgUpdate) {
+      this.layerInsertQuery.finalize();
+      /*if (layersWithBgUpdate) {
           this.layersInsertQuery.finalize();
         }
         if (layersWithoutBgUpdate) {
           this.layersInsertQueryNoBG.finalize();
         }*/
-      } catch (e) {
-        console.error(e);
-      }
-    }, 1);
+    } catch (e) {
+      console.error(e);
+    }
+    //}, 1);
   }
 }

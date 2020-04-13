@@ -7,7 +7,7 @@ import { onAssetsLoaded } from '../common/assets';
 import DebugInfo from './DebugInfo';
 import { isWebGL2Available } from '../common/utils';
 import SceneRenderer from '../game/sceneRenderer';
-import RendererBase from '../graphics/rendererBase';
+import RendererBase from '../game/graphics/rendererBase';
 import Spinner from './components/Spinner';
 import Worlds from './Worlds';
 import { WorldSchema } from '../common/schemas';

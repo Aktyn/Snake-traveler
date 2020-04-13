@@ -1,6 +1,6 @@
 import ObjectBase from './objectBase';
 import Sensor, { SensorShapes } from '../physics/sensor';
-import Entities from './entities';
+import Entities from '../entities';
 
 export default abstract class DynamicObject extends ObjectBase {
   private readonly _sensor: Sensor;

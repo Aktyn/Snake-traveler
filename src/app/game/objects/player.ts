@@ -1,10 +1,10 @@
-import { SensorShapes } from './../physics/sensor';
-import { Updatable } from './updatable';
-import { debugLine } from '../debugger';
+import { SensorShapes } from '../physics/sensor';
+import { Updatable } from '../updatable';
+import { debugLine } from '../../debugger';
 import DynamicObject from './dynamicObject';
-import { Palette } from '../common/colors';
+import { Palette } from '../../common/colors';
 import PlayerSegment from './playerSegment';
-import WorldMap from './worldMap';
+import WorldMap from '../worldMap';
 import WeaponBase from './weaponBase';
 import DoubleGun from './doubleGun';
 
@@ -25,7 +25,7 @@ export default class Player extends DynamicObject implements Updatable {
     super.color = Palette.PLAYER;
 
     for (let i = 1; i <= 4; i++) {
-      const segment = new PlayerSegment(x, y - (this.height + PlayerSegment.offset) * 2 * i, map.entities);
+      const segment = new PlayerSegment(x, y /* - (this.height + PlayerSegment.offset) * 2 * i*/, map.entities);
       this.segments.push(segment);
       map.addObject(segment);
     }

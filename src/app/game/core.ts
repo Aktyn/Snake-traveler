@@ -190,8 +190,8 @@ export default class Core {
   }
 
   init(world: WorldSchema, onMapFullyLoaded?: Function) {
-    this.map = new WorldMap(world, 0, 0, (map: WorldMap) => {
-      map.spawnPlayer(map.getCenter());
+    this.map = new WorldMap(world, (map: WorldMap) => {
+      map.spawnPlayer(world.playerPos[0], world.playerPos[1]);
       onMapFullyLoaded?.();
     });
 

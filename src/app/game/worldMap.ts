@@ -1,15 +1,15 @@
-import Camera from './camera';
-import API from '../common/api';
+import Camera from './objects/camera';
+import API, { CustomError } from '../common/api';
 import Chunk, { postGenerateQueue } from './chunk';
 import { Updatable } from './updatable';
 import Vec2 from '../common/math/vec2';
-import Player from './player';
+import Player from './objects/player';
 import Entities from './entities';
 import { debugLine } from '../debugger';
 import CollisionDetector from './collisionDetector';
-import DynamicObject from './dynamicObject';
-import ObjectBase from './objectBase';
-import Bullet from './bullet';
+import DynamicObject from './objects/dynamicObject';
+import ObjectBase from './objects/objectBase';
+import Bullet from './objects/bullet';
 import Painter from './painter';
 import { WorldSchema } from '../common/schemas';
 //@ts-ignore
@@ -37,20 +37,20 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   private cam: Camera;
   private targetPlayer: Player | null = null;
 
-  private centerChunkPos: Vec2;
+  private readonly centerChunkPos: Vec2;
   private chunksGrid: Chunk[][] = getEmptyChunksGrid();
   private readonly painter = new Painter();
 
   private objects: Updatable[] = [];
   private dynamicObjects: DynamicObject[] = [];
 
-  constructor(world: WorldSchema, startX = 0, startY = 0, onLoad: (map: WorldMap) => void) {
+  constructor(world: WorldSchema, onLoad: (map: WorldMap) => void) {
     super();
     this.entities = new Entities();
     this.world = world;
     postGenerateQueue.registerBatchLoad(() => onLoad(this));
 
-    this.centerChunkPos = Chunk.clampPos(startX | 0, -(startY | 0));
+    this.centerChunkPos = Chunk.clampPos(world.playerPos[0], -world.playerPos[1]);
 
     console.log(`Map starting point: [${this.centerChunkPos.x}, ${this.centerChunkPos.y}]`);
 
@@ -154,12 +154,16 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     }
   }
 
-  private loadChunkAsync(x: number, y: number) {
-    const chunk = new Chunk(x, y, this.world);
+  private loadChunkAsync(x: number, y: number, _chunk?: Chunk) {
+    const chunk = _chunk || new Chunk(x, y, this.world);
 
     API.fetchChunk(this.world.id, x * Chunk.RESOLUTION, y * Chunk.RESOLUTION, Chunk.RESOLUTION)
       .then(chunkData => chunk.setData(chunkData))
       .catch(e => {
+        if (e === CustomError.TIMEOUT) {
+          this.loadChunkAsync(x, y, chunk); //try again
+          return;
+        }
         console.log(e);
         chunk.destroy();
       });
@@ -214,8 +218,8 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     this.cam.zoom(factor);
   }
 
-  spawnPlayer(pos: Vec2, setAsTarget = false): Player {
-    const player = new Player(pos.x, pos.y, this);
+  spawnPlayer(posX: number, posY: number, setAsTarget = false): Player {
+    const player = new Player(posX, posY, this);
     this.addObject(player);
 
     if (setAsTarget || !this.targetPlayer) {
@@ -283,26 +287,50 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     }
   }
 
-  update(delta: number) {
-    for (let i = 0; i < this.objects.length; i++) {
-      if (((this.objects[i] as unknown) as ObjectBase).deleted) {
-        this.removeObject(this.objects[i], i);
-        i--;
-      } else {
-        this.objects[i].update(delta);
+  private areNearbyChunksLoaded() {
+    if (!this.targetPlayer) return false;
+
+    for (let x = -2; x <= 1; x++) {
+      for (let y = -2; y <= 1; y++) {
+        if (!this.chunksGrid[Chunk.GRID_SIZE_X + x][Chunk.GRID_SIZE_Y + y].isPostGenerated()) {
+          return false;
+        }
       }
     }
 
-    if (this.targetPlayer) {
-      this.cam.follow(this.targetPlayer);
-    }
-    this.cam.update(delta);
+    return true;
+  }
 
-    if (Chunk.loadingChunks === 0) {
+  update(delta: number) {
+    const freezePhysics = !this.areNearbyChunksLoaded();
+    if (!freezePhysics) {
+      for (let i = 0; i < this.objects.length; i++) {
+        if (((this.objects[i] as unknown) as ObjectBase).deleted) {
+          this.removeObject(this.objects[i], i);
+          i--;
+        } else {
+          this.objects[i].update(delta);
+        }
+      }
+
+      if (this.targetPlayer) {
+        if (
+          (this.targetPlayer.x - this.world.playerPos[0]) ** 2 + (this.targetPlayer.y - this.world.playerPos[1]) ** 2 >
+          1
+        ) {
+          API.updatePlayerPosition(this.world.id, this.targetPlayer.x, this.targetPlayer.y).catch(console.error);
+
+          this.world.playerPos[0] = this.targetPlayer.x;
+          this.world.playerPos[1] = this.targetPlayer.y;
+        }
+        this.cam.follow(this.targetPlayer);
+      }
+      this.cam.update(delta);
+
       this.updateChunks();
-    }
 
-    super.detectCollisions(this.dynamicObjects, this.chunksGrid, this.centerChunkPos);
+      super.detectCollisions(this.dynamicObjects, this.chunksGrid, this.centerChunkPos);
+    }
 
     debugLine(`Loading chunks: ${Chunk.loadingChunks}`);
     debugLine(`Updatable objects: ${this.objects.length}`);

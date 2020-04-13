@@ -15,3 +15,18 @@
   align-items: center;
   justify-content: center;
 }
+
+.no-box-shadow {
+  box-shadow: none !important;
+}
+
+.rotating-icon {
+  cursor: pointer;
+  transition: transform 0.25s ease-in-out;
+}
+.rotating-icon:hover {
+  transform: rotate(12deg);
+}
+.rotating-icon:active {
+  transform: rotate(12deg) scale(0.9);
+}
