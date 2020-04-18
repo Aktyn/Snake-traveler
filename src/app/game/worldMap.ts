@@ -69,6 +69,17 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   destroy() {
     //this.syncWorker.removeEventListener('message', func);
     this.syncWorker.terminate();
+
+    this.objects.forEach(obj => obj instanceof ObjectBase && obj.destroy());
+    this.objects = [];
+
+    this.dynamicObjects.forEach(obj => obj.destroy());
+    this.dynamicObjects = [];
+
+    this.chunksGrid.forEach(col => col.forEach(chunk => chunk?.destroy()));
+    this.chunksGrid = [];
+
+    this.entities.destroy();
   }
 
   getCenter() {

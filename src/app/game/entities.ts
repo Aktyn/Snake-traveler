@@ -46,6 +46,12 @@ export class Entity {
     this.schema = schema;
   }
 
+  destroy() {
+    this.texture?.destroy();
+    this.objects.forEach(obj => obj.destroy());
+    this.objects.length = 0;
+  }
+
   bindTexture(GL: WebGL2RenderingContext) {
     if (!this.texture) {
       this.texture = TextureModule.createFrom(
@@ -70,6 +76,14 @@ export default class Entities {
     [Layers.BACKGROUND]: generateFromPredefinedSchema(Predefined, Layers.BACKGROUND),
     [Layers.FOREGROUND]: generateFromPredefinedSchema(Predefined, Layers.FOREGROUND)
   };
+
+  destroy() {
+    for (const layer in this.layers) {
+      for (const entityName in this.layers[(layer as unknown) as Layers]) {
+        this.layers[(layer as unknown) as Layers][(entityName as unknown) as EntityName].destroy();
+      }
+    }
+  }
 
   addObject(entityName: EntityName, object: ObjectBase) {
     const layer = Predefined[entityName].layer;

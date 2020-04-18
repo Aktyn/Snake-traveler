@@ -189,11 +189,22 @@ export default class Core {
     tick(0);
   }
 
-  init(world: WorldSchema, onMapFullyLoaded?: Function) {
-    this.map = new WorldMap(world, (map: WorldMap) => {
+  private loadMap(world: WorldSchema, onMapFullyLoaded?: Function) {
+    return new WorldMap(world, (map: WorldMap) => {
       map.spawnPlayer(world.playerPos[0], world.playerPos[1]);
       onMapFullyLoaded?.();
     });
+  }
+
+  init(world: WorldSchema, onMapFullyLoaded?: Function) {
+    if (this.map) {
+      //core has been already initialized - just reload map with different world
+      this.map.destroy();
+      this.map = this.loadMap(world, onMapFullyLoaded);
+      return;
+    }
+
+    this.map = this.loadMap(world, onMapFullyLoaded);
 
     this.startUpdateLoop();
     this.initControls();

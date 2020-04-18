@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ReactComponent as CloseIcon } from '../icons/close.svg';
 
 interface ModalI {
@@ -8,12 +8,22 @@ interface ModalI {
 }
 
 export default function Modal(props: React.PropsWithChildren<ModalI>) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   if (!props.open) {
     return null;
   }
 
   return (
-    <div className="fullscreen modal-container">
+    <div
+      ref={containerRef}
+      className="fullscreen modal-container"
+      onClick={e => {
+        if (e.target === containerRef.current) {
+          props.onClose?.();
+        }
+      }}
+    >
       <div className="modal-center">
         <div className="modal-title">
           <span style={{ width: '24px', marginRight: '16px' }} />

@@ -1,12 +1,13 @@
-import React, { useState, PropsWithChildren, useEffect } from 'react';
+import React, { useState, PropsWithChildren, useEffect, useContext, useRef, useCallback } from 'react';
 import useTranslation from './hooks/useTranslation';
 import API from '../common/api';
 import { WorldSchema } from '../common/schemas';
-
+import { AppContext } from './App';
 import SafeButton from './components/SafeButton';
 import ConnectionStatus from '../gui/ConnectionStatus';
 
 import '../../styles/worlds.css';
+import Spinner from './components/Spinner';
 
 const getRandomSeed = (len = 16) => {
   const chars = 'abcdefghijklmnopqrstuvwxyz1234567890';
@@ -20,7 +21,6 @@ const getRandomSeed = (len = 16) => {
 };
 
 interface WorldsProps {
-  onChoice: (world: WorldSchema) => void;
   isModalContent?: boolean;
 }
 
@@ -39,28 +39,39 @@ function WorldFormHeader({ children }: PropsWithChildren<object>) {
   );
 }
 
-function WorldSelectionView({
-  onAddButtonClick,
-  onChoice
-}: {
-  onAddButtonClick: Function;
-  onChoice: (world: WorldSchema) => void;
-}) {
+function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }) {
   const t = useTranslation();
+  const app = useContext(AppContext);
 
+  const isLoaded = useRef(true);
+  const [loading, setLoading] = useState(true);
   const [availableWorlds, setAvailableWorlds] = useState<WorldSchema[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<WorldSchema | null>(null);
 
-  useEffect(reloadWorldsList, []);
+  const reloadWorldsList = useCallback(() => {
+    setLoading(true);
+    API.getWorlds()
+      .then(res => {
+        if (!isLoaded.current) {
+          return;
+        }
+        setAvailableWorlds(res);
+        setSelectedWorld(res.find(({ id }) => id === app.chosenWorld?.id) || res[0] || null);
 
-  function reloadWorldsList() {
-    API.getWorlds().then(res => {
-      setAvailableWorlds(res);
-      setSelectedWorld(res[0] || null);
+        // app.loadWorld(res[0]); //TEMP
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      // onChoice(res[0]); //TEMP
-    });
-  }
+  useEffect(() => {
+    reloadWorldsList();
+    return () => {
+      isLoaded.current = false;
+    };
+  }, [reloadWorldsList]);
 
   function handleWorldDelete(world: WorldSchema) {
     API.deleteWorld(world.id).then(() => {
@@ -80,7 +91,9 @@ function WorldSelectionView({
             </button>
           </div>
         </WorldFormHeader>
-        {availableWorlds.length ? (
+        {loading ? (
+          <Spinner colored />
+        ) : availableWorlds.length ? (
           <div className="worlds-list">
             {availableWorlds.map((world, i) => {
               return (
@@ -100,7 +113,7 @@ function WorldSelectionView({
       </div>
       <hr />
       <div>
-        <button disabled={!selectedWorld} onClick={() => selectedWorld && onChoice(selectedWorld)}>
+        <button disabled={!selectedWorld} onClick={() => selectedWorld && app.loadWorld(selectedWorld)}>
           {t('action.play').toUpperCase()}
         </button>
         <div style={{ margin: '8px 0' }} />
@@ -153,7 +166,7 @@ function WorldCreatorView({ onReturn }: { onReturn: Function }) {
   );
 }
 
-export default function Worlds({ onChoice, isModalContent }: WorldsProps) {
+export default function Worlds({ isModalContent }: WorldsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   return (
@@ -161,7 +174,7 @@ export default function Worlds({ onChoice, isModalContent }: WorldsProps) {
       {showAddForm ? (
         <WorldCreatorView onReturn={() => setShowAddForm(false)} />
       ) : (
-        <WorldSelectionView onAddButtonClick={() => setShowAddForm(true)} onChoice={onChoice} />
+        <WorldSelectionView onAddButtonClick={() => setShowAddForm(true)} />
       )}
       <ConnectionStatus hideIfConnected />
     </div>

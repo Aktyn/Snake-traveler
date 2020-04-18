@@ -5,11 +5,19 @@ import Bullet from './bullet';
 const SHOOTING_FREQUENCY = 0.2; //shoot every x seconds
 
 export default class DoubleGun extends WeaponBase {
+  private static readonly entityName = 'doubleGun';
   private readonly map: WorldMap;
 
   constructor(x: number, y: number, map: WorldMap) {
     super(x, y, map.entities, SHOOTING_FREQUENCY);
     this.map = map;
+
+    map.entities.addObject(DoubleGun.entityName, this);
+  }
+
+  destroy() {
+    this.entities.removeObject(DoubleGun.entityName, this);
+    super.destroy();
   }
 
   shoot() {

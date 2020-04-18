@@ -15,6 +15,8 @@ import useTranslation from './hooks/useTranslation';
 
 export interface AppContextSchema {
   setGamePaused: (paused: boolean) => void;
+  loadWorld: (world: WorldSchema) => void;
+  chosenWorld: WorldSchema | null;
 }
 
 export const AppContext = React.createContext<AppContextSchema>({} as AppContextSchema);
@@ -33,7 +35,13 @@ function App() {
   const webGL2Available = useMemo(isWebGL2Available, []);
 
   const definedContext: AppContextSchema = {
-    setGamePaused: paused => core?.setPaused(paused)
+    setGamePaused: paused => core?.setPaused(paused),
+    loadWorld: world => {
+      if (world.id !== chosenWorld?.id) {
+        setChosenWorld(world);
+      }
+    },
+    chosenWorld
   };
 
   useEffect(() => {
@@ -59,6 +67,7 @@ function App() {
 
   useEffect(() => {
     if (core && chosenWorld) {
+      setMapLoaded(false);
       core.init(chosenWorld, () => setMapLoaded(true));
     }
   }, [chosenWorld, core]);
@@ -70,7 +79,9 @@ function App() {
   if (!chosenWorld) {
     return (
       <div className="fullscreen center-content">
-        <Worlds onChoice={setChosenWorld} />
+        <AppContext.Provider value={definedContext}>
+          <Worlds />
+        </AppContext.Provider>
       </div>
     );
   }

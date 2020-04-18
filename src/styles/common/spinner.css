@@ -29,6 +29,10 @@
   animation: sk-bounce 2.0s infinite ease-in-out;
 }
 
+.spinner.colored .double-bounce1, .spinner.colored .double-bounce2 {
+  background-color: #009688;
+}
+
 .spinner .double-bounce2 {
   animation-delay: -1.0s;
 }
