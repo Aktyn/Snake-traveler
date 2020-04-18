@@ -70,11 +70,20 @@ export default class RendererBase {
     Object.assign(this.CANVAS.style, {
       //background: 'none',
       'user-select': 'none',
-      pointerEvents: 'none'
+      pointerEvents: 'none',
+      transition: 'filter 0.5s linear'
     });
 
     this.GL = loadContext(this.CANVAS);
     targetElement.appendChild(this.CANVAS);
+  }
+
+  setBlur(size: number) {
+    if (!size) {
+      this.CANVAS.style.filter = 'none';
+    } else {
+      this.CANVAS.style.filter = `blur(${size}px)`;
+    }
   }
 
   enableAdditiveBlending(enable: boolean) {

@@ -35,7 +35,10 @@ function App() {
   const webGL2Available = useMemo(isWebGL2Available, []);
 
   const definedContext: AppContextSchema = {
-    setGamePaused: paused => core?.setPaused(paused),
+    setGamePaused: paused => {
+      renderer?.setBlur(paused ? 10 : 0);
+      core?.setPaused(paused);
+    },
     loadWorld: world => {
       if (world.id !== chosenWorld?.id) {
         setChosenWorld(world);

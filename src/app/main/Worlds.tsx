@@ -71,7 +71,8 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
     return () => {
       isLoaded.current = false;
     };
-  }, [reloadWorldsList]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleWorldDelete(world: WorldSchema) {
     API.deleteWorld(world.id).then(() => {
