@@ -12,6 +12,7 @@ import Spinner from './components/Spinner';
 import Worlds from './Worlds';
 import { WorldSchema } from '../common/schemas';
 import useTranslation from './hooks/useTranslation';
+import MenuBackround from './components/MenuBackground';
 
 export interface AppContextSchema {
   setGamePaused: (paused: boolean) => void;
@@ -82,6 +83,7 @@ function App() {
   if (!chosenWorld) {
     return (
       <div className="fullscreen center-content">
+        <MenuBackround />
         <AppContext.Provider value={definedContext}>
           <Worlds />
         </AppContext.Provider>

@@ -5,8 +5,8 @@ html, body {
   font-family: 'Roboto', 'Droid Sans', 'Helvetica Neue', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* background-color: #009688; */
-  background-image: linear-gradient(150deg, #006064, #26A69A, #00796B);
+  background-color: #009688;
+  /* background-image: linear-gradient(150deg, #006064, #26A69A, #00796B); */
   height: 100%;
   color: #fff;
 }
@@ -54,4 +54,37 @@ input[type=text]:focus {
   background-color: #0008;
   color: #fff;
   text-align: right;
+}
+
+/* menu-background */
+.menu-background {
+  background-image: linear-gradient(135deg, #673AB7, #4DB6AC, #4DD0E1);
+  overflow: hidden;
+}
+
+.menu-background .bold-item { 
+  display: inline-block;
+  width: 150px;
+  height: 200vh;
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(45deg) translateY(-100%);
+  background-color: red;
+  border-radius: 100px;
+  box-shadow: 0px 0px 25px #0004;
+  opacity: 0.5;
+  animation: bold-item-slide 20s ease-in-out infinite;
+}
+
+.menu-background .bold-item:nth-child(even) { 
+  animation-direction: reverse;
+  animation-delay: 10s;
+}
+
+@keyframes bold-item-slide {
+  0% {
+    transform: translate(-50%, -50%) rotate(45deg) translateY(-100%);
+  }
+  20%, 100% {
+    transform: translate(-50%, -50%) rotate(45deg) translateY(100%);
+  }
 }
