@@ -58,7 +58,7 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
         setAvailableWorlds(res);
         setSelectedWorld(res.find(({ id }) => id === app.chosenWorld?.id) || res[0] || null);
 
-        // app.loadWorld(res[0]); //TEMP
+        app.loadWorld(res[0]); //TEMP
       })
       .finally(() => {
         setLoading(false);
@@ -132,7 +132,7 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
 function WorldCreatorView({ onReturn }: { onReturn: Function }) {
   const t = useTranslation();
 
-  const [name, setName] = useState('Mock name ' + ((Math.random() * 1000) | 0));
+  const [name, setName] = useState(`${t('form.world')}_${(Math.random() * 1000) | 0}`);
   const [seed, setSeed] = useState(getRandomSeed());
 
   return (

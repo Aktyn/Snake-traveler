@@ -4,6 +4,7 @@ import SceneRenderer from './sceneRenderer';
 import * as Debugger from '../debugger';
 import { Settings, SteeringType } from '../game/userSettings';
 import { WorldSchema } from '../common/schemas';
+import EnemySpawner from './objects/enemySpawner';
 
 export default class Core {
   private animId = 0;
@@ -13,6 +14,14 @@ export default class Core {
 
   private paused = false;
   private readonly cursorPos = { x: 0, y: 0 };
+
+  //time durations are given in seconds
+  private readonly gameConfig = {
+    enemySpawnerFrequency: 1,
+    maxEnemySpawners: 16
+  };
+
+  private enemySpawnerTimer = 0;
 
   private readonly wheelListener = this.onWheel.bind(this);
   private readonly keyDownListener = this.onKeyDown.bind(this);
@@ -162,6 +171,17 @@ export default class Core {
     }
 
     Debugger.clear();
+
+    if (
+      EnemySpawner.spawners < this.gameConfig.maxEnemySpawners &&
+      (this.enemySpawnerTimer += delta) > this.gameConfig.enemySpawnerFrequency
+    ) {
+      this.enemySpawnerTimer = 0;
+
+      const spot = this.map.getRandomSpot();
+      this.map.addObject(new EnemySpawner(spot.x, spot.y, this.map));
+    }
+
     this.map.update(delta);
     this.renderer.render(this.map);
     Debugger.apply();

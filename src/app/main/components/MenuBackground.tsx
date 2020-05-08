@@ -7,7 +7,7 @@ const palette = [
   { from: '#81C784', to: '#fff' }
 ];
 
-export default function MenuBackround() {
+export default function MenuBackground() {
   return (
     <div className="fullscreen menu-background">
       {palette.map(({ from, to }, index) => (

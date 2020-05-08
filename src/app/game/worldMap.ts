@@ -15,6 +15,10 @@ import { WorldSchema } from '../common/schemas';
 //@ts-ignore
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import syncWorker from 'workerize-loader!./serverSyncWorker';
+import EnemySpawner from './objects/enemySpawner';
+import PlayerSegment from './objects/playerSegment';
+
+type Class = { new (...args: any[]): any };
 
 interface ChunkToSave {
   chunk: Chunk;
@@ -98,8 +102,45 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     return this.centerChunkPos.y - Chunk.GRID_SIZE_Y;
   }
 
+  get chunksGridRight() {
+    return this.centerChunkPos.x + Chunk.GRID_SIZE_X;
+  }
+
+  get chunksGridTop() {
+    return this.centerChunkPos.y + Chunk.GRID_SIZE_Y;
+  }
+
   get camera() {
     return this.cam;
+  }
+
+  private getRandomChunk() {
+    const col = this.chunksGrid[(this.chunksGrid.length * Math.random()) | 0];
+    return col[(col.length * Math.random()) | 0];
+  }
+
+  //returns random point restricted to loaded chunks
+  getRandomSpot() {
+    const maxTries = this.chunks.length ** 2;
+    for (let i = 0; i < maxTries; i++) {
+      const chunk = this.getRandomChunk();
+      if (chunk.isLoaded()) {
+        return new Vec2(
+          chunk.matrix.x + chunk.matrix.width * (Math.random() * 2 - 1),
+          chunk.matrix.y + chunk.matrix.height * (Math.random() * 2 - 1)
+        );
+      }
+    }
+    return new Vec2();
+  }
+
+  isOutOfChunksGrid(object: ObjectBase) {
+    return (
+      this.chunksGridLeft * Chunk.SIZE * 2 > object.x - object.width ||
+      (this.chunksGridRight + 1) * Chunk.SIZE * 2 < object.x + object.width ||
+      -this.chunksGridBottom * Chunk.SIZE * 2 < object.y + object.height ||
+      -(this.chunksGridTop + 1) * Chunk.SIZE * 2 > object.y - object.height
+    );
   }
 
   private async reloadChunks() {
@@ -110,13 +151,6 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     //load new set of visible chunks
     const left = this.chunksGridLeft;
     const bottom = this.chunksGridBottom;
-
-    /*for (let x = 0; x < this.chunksGrid.length; x++) {
-      const column = this.chunksGrid[x];
-      for (let y = 0; y < column.length; y++) {
-        column[y] = this.loadChunkAsync(left + x * Chunk.RESOLUTION, bottom + y * Chunk.RESOLUTION);
-      }
-    }*/
 
     //new method of loading (load chunks from center spirally)
     let x = Chunk.GRID_SIZE_X;
@@ -278,6 +312,45 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     }
   }
 
+  private isObjectOfInstances(obj: ObjectBase, instances: Class[]) {
+    return instances.some(instance => obj instanceof instance);
+  }
+
+  private objectsAreInstances(objA: ObjectBase, objB: ObjectBase, instances1: Class[], instances2: Class[]) {
+    return (
+      (this.isObjectOfInstances(objA, instances1) && this.isObjectOfInstances(objB, instances2)) ||
+      (this.isObjectOfInstances(objB, instances1) && this.isObjectOfInstances(objA, instances2))
+    );
+  }
+
+  private getObjectOfInstance(instance: Class, ...objects: ObjectBase[]) {
+    return objects.find(obj => obj instanceof instance);
+  }
+
+  private onBulletCollision(bullet: Bullet, otherObject: DynamicObject) {
+    bullet.deleted = true;
+  }
+
+  //TODO: optimize by using object type enum instead of 'instance of' expression
+  onDynamicObjectsCollision(object1: DynamicObject, object2: DynamicObject) {
+    if (this.objectsAreInstances(object1, object2, [PlayerSegment], [Player, PlayerSegment])) {
+      return;
+    }
+    if (this.isObjectOfInstances(object1, [Bullet])) {
+      this.onBulletCollision(object1 as never, object2);
+      return;
+    }
+    if (this.isObjectOfInstances(object2, [Bullet])) {
+      this.onBulletCollision(object2 as never, object1);
+      return;
+    }
+    /*const bullet = this.getObjectOfInstance(Bullet, object1, object2);
+    if (bullet) {
+      bullet.deleted = true;
+    }*/
+    super.bounceDynamicObjects(object1, object2);
+  }
+
   private updateChunks() {
     if (!this.targetPlayer) return;
 
@@ -345,6 +418,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
     debugLine(`Loading chunks: ${Chunk.loadingChunks}`);
     debugLine(`Updatable objects: ${this.objects.length}`);
+    debugLine(`Enemy spawners: ${EnemySpawner.spawners}`);
     debugLine(`Dynamic objects: ${this.dynamicObjects.length}`);
   }
 }

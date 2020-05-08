@@ -58,7 +58,8 @@ export const Palette = {
   WHITE: rgb(255, 255, 255),
   BLACK: rgb(0, 0, 0),
   PLAYER: rgb(239, 83, 80),
-  BULLET: rgb(255, 171, 145)
+  BULLET: rgb(255, 171, 145),
+  ENEMY_SPAWNER: rgb(244, 67, 54)
 };
 
 export const Biomes = [

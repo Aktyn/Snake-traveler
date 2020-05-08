@@ -15,7 +15,8 @@
   },
   "form": {
     "name": "Nazwa",
-    "seed": "Ziarno losowości"
+    "seed": "Ziarno losowości",
+    "world": "Świat"
   },
   "title": {
     "settings": "Ustawienia",

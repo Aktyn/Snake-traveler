@@ -5,6 +5,8 @@ import { getChunkAtPosition } from './common';
 
 //common variables
 let coords: number[][],
+  obj1_i = 0,
+  obj2_i = 0,
   c_i = 0,
   r_i = 0,
   r_s = 0,
@@ -22,10 +24,10 @@ let coords: number[][],
   b_product = 0.0,
   b_radius = 0.0,
   b_angle = 0.0,
+  dot = 0.0,
   found = false;
 const bounceVec = new Vec2(),
   currentVec = new Vec2();
-//pixel_buffer = new Uint8Array(4);
 
 //PARAMETERS
 const PUSH_STEPS = 4;
@@ -74,21 +76,21 @@ function getPixelAlpha(x: number, y: number, chunks: Chunk[][], centerChunkPos: 
   pX = (x - (chunk.matrix.x - Chunk.SIZE)) / (Chunk.SIZE * 2);
   pY = 1 - (y - (chunk.matrix.y - Chunk.SIZE)) / (Chunk.SIZE * 2);
 
-  //if (!(pX >= 0 && pX <= 1 && pY >= 0 && pY <= 1)) {
-  //  return 255; //simulate collision behavior on incorrect coordinates
-  //}
-
   return chunk.getForegroundPixelAlpha(pX, pY);
 }
 
 export default abstract class CollisionDetector {
   abstract onPainterCollision(object: DynamicObject, collisionX: number, collisionY: number): void;
+  abstract onDynamicObjectsCollision(object1: DynamicObject, object2: DynamicObject): void;
 
   protected detectCollisions(dynamicObjects: DynamicObject[], chunks: Chunk[][], centerChunkPos: Vec2) {
-    for (const object of dynamicObjects) {
-      this.detectSensorToPainterCollision(object, chunks, centerChunkPos);
+    for (obj1_i = 0; obj1_i < dynamicObjects.length; obj1_i++) {
+      this.detectSensorToPainterCollision(dynamicObjects[obj1_i], chunks, centerChunkPos);
 
-      //TODO: detect collisions between dynamic objects
+      //detect collisions between dynamic objects
+      for (obj2_i = obj1_i + 1; obj2_i < dynamicObjects.length; obj2_i++) {
+        this.detectCircleToCircleCollision(dynamicObjects[obj1_i], dynamicObjects[obj2_i]);
+      }
     }
   }
 
@@ -109,6 +111,19 @@ export default abstract class CollisionDetector {
         this.onPainterCollision(object, xx, yy);
       }
     }
+  }
+
+  private detectCircleToCircleCollision(obj1: DynamicObject, obj2: DynamicObject) {
+    if (this.circleIntersectsCircle(obj1, obj2)) {
+      this.onDynamicObjectsCollision(obj1, obj2);
+    }
+  }
+
+  private circleIntersectsCircle(obj1: DynamicObject, obj2: DynamicObject) {
+    const dstSquared = (obj2.x - obj1.x) ** 2 + (obj2.y - obj1.y) ** 2;
+    const radiusSumSquared = (obj1.width + obj2.width) ** 2;
+
+    return radiusSumSquared >= dstSquared;
   }
 
   protected bounceOutOfColor(object: DynamicObject, chunks: Chunk[][], centerChunkPos: Vec2) {
@@ -141,5 +156,25 @@ export default abstract class CollisionDetector {
     object.rot = -Math.atan2(bounceVec.y, bounceVec.x) + Math.PI / 2.0;
 
     return outBounceVec;
+  }
+
+  protected bounceDynamicObjects(obj1: DynamicObject, obj2: DynamicObject) {
+    currentVec.set(Math.cos(-obj1.rot + Math.PI / 2.0), Math.sin(-obj1.rot + Math.PI / 2.0)).normalize();
+    bounceVec.set(obj1.x - obj2.x, obj1.y - obj2.y).normalize();
+
+    safety = 16;
+    do {
+      obj1.setPos(obj1.x + bounceVec.x * COLLISION_PUSH_FACTOR, obj1.y + bounceVec.y * COLLISION_PUSH_FACTOR);
+    } while (this.circleIntersectsCircle(obj1, obj2) && --safety > 0);
+
+    dot = currentVec.dot(bounceVec);
+
+    if (dot > 0.0) return true;
+
+    bounceVec.x = currentVec.x - bounceVec.x * dot * 2.0;
+    bounceVec.y = currentVec.y - bounceVec.y * dot * 2.0;
+
+    obj1.rot = -Math.atan2(bounceVec.y, bounceVec.x) + Math.PI / 2.0;
+    return false;
   }
 }

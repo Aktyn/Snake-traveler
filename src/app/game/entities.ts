@@ -32,6 +32,10 @@ const Predefined = {
   playerSegment: {
     layer: Layers.FOREGROUND,
     texture: 'player_segment.png'
+  },
+  enemySpawner: {
+    layer: Layers.FOREGROUND,
+    texture: 'enemy_spawner.png'
   }
 };
 
