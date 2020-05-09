@@ -39,6 +39,7 @@ export default class SceneRenderer extends RendererBase {
     this.updateShadowVector();
   }
 
+  //TODO: allow user to control shadow angle
   private updateShadowVector(w = window.innerWidth, h = window.innerHeight) {
     const len = Math.sqrt(w * w + h * h);
     const normalized = [-h / len, w / len];

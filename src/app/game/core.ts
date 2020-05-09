@@ -173,7 +173,7 @@ export default class Core {
     Debugger.clear();
 
     if (
-      EnemySpawner.spawners < this.gameConfig.maxEnemySpawners &&
+      EnemySpawner.instances < this.gameConfig.maxEnemySpawners &&
       (this.enemySpawnerTimer += delta) > this.gameConfig.enemySpawnerFrequency
     ) {
       this.enemySpawnerTimer = 0;

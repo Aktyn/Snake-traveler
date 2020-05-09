@@ -41,7 +41,7 @@ function App() {
       core?.setPaused(paused);
     },
     loadWorld: world => {
-      if (world.id !== chosenWorld?.id) {
+      if (world?.id !== chosenWorld?.id) {
         setChosenWorld(world);
       }
     },

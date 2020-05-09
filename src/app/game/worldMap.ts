@@ -17,6 +17,8 @@ import { WorldSchema } from '../common/schemas';
 import syncWorker from 'workerize-loader!./serverSyncWorker';
 import EnemySpawner from './objects/enemySpawner';
 import PlayerSegment from './objects/playerSegment';
+import EnemyBase from './objects/enemyBase';
+import SpikyEnemy from './objects/spikyEnemy';
 
 type Class = { new (...args: any[]): any };
 
@@ -306,6 +308,9 @@ export default class WorldMap extends CollisionDetector implements Updatable {
       this.painter.clearCircle(this.chunksGrid, this.centerChunkPos, collisionX, collisionY, Bullet.explosionRadius);
       object.deleted = true;
     } else {
+      if (object instanceof SpikyEnemy) {
+        (object as SpikyEnemy).resetRotation();
+      }
       //if object is not a ghost and reacts with walls bouncing from them
       /*const bounceVector = */ super.bounceOutOfColor(object, this.chunks, this.centerChunkPos);
       //console.log('Object collided', bounceVector?.x, bounceVector?.y);
@@ -328,7 +333,17 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   }
 
   private onBulletCollision(bullet: Bullet, otherObject: DynamicObject) {
-    bullet.deleted = true;
+    if (this.isObjectOfInstances(otherObject, [EnemyBase as never])) {
+      const enemy = otherObject as EnemyBase;
+      enemy.onHit(bullet.power);
+      if (!enemy.alive) {
+        //TODO: score points from killing an enemy
+      }
+    }
+
+    if (!this.isObjectOfInstances(otherObject, [PlayerSegment])) {
+      bullet.deleted = true;
+    }
   }
 
   //TODO: optimize by using object type enum instead of 'instance of' expression
@@ -336,18 +351,42 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     if (this.objectsAreInstances(object1, object2, [PlayerSegment], [Player, PlayerSegment])) {
       return;
     }
+
     if (this.isObjectOfInstances(object1, [Bullet])) {
       this.onBulletCollision(object1 as never, object2);
       return;
     }
+
     if (this.isObjectOfInstances(object2, [Bullet])) {
       this.onBulletCollision(object2 as never, object1);
       return;
     }
-    /*const bullet = this.getObjectOfInstance(Bullet, object1, object2);
-    if (bullet) {
-      bullet.deleted = true;
-    }*/
+
+    if (object1 instanceof SpikyEnemy) {
+      (object1 as SpikyEnemy).resetRotation();
+    }
+    if (object2 instanceof SpikyEnemy) {
+      (object2 as SpikyEnemy).resetRotation();
+    }
+
+    if (this.objectsAreInstances(object1, object2, [EnemyBase as never], [EnemySpawner])) {
+      super.bounceDynamicObjects(
+        object1,
+        object2,
+        this.isObjectOfInstances(object1, [EnemySpawner]),
+        this.isObjectOfInstances(object2, [EnemySpawner])
+      );
+      return;
+    }
+
+    if (this.objectsAreInstances(object1, object2, [EnemyBase as never], [Player, PlayerSegment])) {
+      const enemy = this.getObjectOfInstance(EnemyBase as never, object1, object2) as EnemyBase;
+      enemy.deleted = true;
+      //TODO: player damage
+      //TODO: blood effect from the screen edges when enemy hits/bumps on player
+      //return;
+    }
+
     super.bounceDynamicObjects(object1, object2);
   }
 
@@ -418,7 +457,8 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
     debugLine(`Loading chunks: ${Chunk.loadingChunks}`);
     debugLine(`Updatable objects: ${this.objects.length}`);
-    debugLine(`Enemy spawners: ${EnemySpawner.spawners}`);
+    debugLine(`Enemy spawners: ${EnemySpawner.instances}`);
+    debugLine(`Enemies: ${EnemyBase.instances}`);
     debugLine(`Dynamic objects: ${this.dynamicObjects.length}`);
   }
 }

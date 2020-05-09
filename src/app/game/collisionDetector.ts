@@ -25,9 +25,12 @@ let coords: number[][],
   b_radius = 0.0,
   b_angle = 0.0,
   dot = 0.0,
+  dot2 = 0.0,
   found = false;
 const bounceVec = new Vec2(),
-  currentVec = new Vec2();
+  bounceVec2 = new Vec2(),
+  currentVec = new Vec2(),
+  currentVec2 = new Vec2();
 
 //PARAMETERS
 const PUSH_STEPS = 4;
@@ -83,6 +86,7 @@ export default abstract class CollisionDetector {
   abstract onPainterCollision(object: DynamicObject, collisionX: number, collisionY: number): void;
   abstract onDynamicObjectsCollision(object1: DynamicObject, object2: DynamicObject): void;
 
+  //TODO: clustering objects for dynamic objects collision optimization
   protected detectCollisions(dynamicObjects: DynamicObject[], chunks: Chunk[][], centerChunkPos: Vec2) {
     for (obj1_i = 0; obj1_i < dynamicObjects.length; obj1_i++) {
       this.detectSensorToPainterCollision(dynamicObjects[obj1_i], chunks, centerChunkPos);
@@ -158,23 +162,43 @@ export default abstract class CollisionDetector {
     return outBounceVec;
   }
 
-  protected bounceDynamicObjects(obj1: DynamicObject, obj2: DynamicObject) {
+  protected bounceDynamicObjects(obj1: DynamicObject, obj2: DynamicObject, lockObj1 = false, lockObj2 = false) {
     currentVec.set(Math.cos(-obj1.rot + Math.PI / 2.0), Math.sin(-obj1.rot + Math.PI / 2.0)).normalize();
+    currentVec2.set(Math.cos(-obj2.rot + Math.PI / 2.0), Math.sin(-obj2.rot + Math.PI / 2.0)).normalize();
+
     bounceVec.set(obj1.x - obj2.x, obj1.y - obj2.y).normalize();
+    bounceVec2.set(-bounceVec.x, -bounceVec.y);
 
     safety = 16;
     do {
-      obj1.setPos(obj1.x + bounceVec.x * COLLISION_PUSH_FACTOR, obj1.y + bounceVec.y * COLLISION_PUSH_FACTOR);
+      if (!lockObj1) {
+        obj1.setPos(obj1.x + bounceVec.x * COLLISION_PUSH_FACTOR, obj1.y + bounceVec.y * COLLISION_PUSH_FACTOR);
+      }
+      if (!lockObj2) {
+        obj2.setPos(obj2.x + bounceVec2.x * COLLISION_PUSH_FACTOR, obj2.y + bounceVec2.y * COLLISION_PUSH_FACTOR);
+      }
     } while (this.circleIntersectsCircle(obj1, obj2) && --safety > 0);
 
-    dot = currentVec.dot(bounceVec);
+    if (!lockObj1) {
+      dot = currentVec.dot(bounceVec);
 
-    if (dot > 0.0) return true;
+      if (dot > 0.0) return true;
+      bounceVec.x = currentVec.x - bounceVec.x * dot * 2.0;
+      bounceVec.y = currentVec.y - bounceVec.y * dot * 2.0;
 
-    bounceVec.x = currentVec.x - bounceVec.x * dot * 2.0;
-    bounceVec.y = currentVec.y - bounceVec.y * dot * 2.0;
+      obj1.rot = -Math.atan2(bounceVec.y, bounceVec.x) + Math.PI / 2.0;
+    }
 
-    obj1.rot = -Math.atan2(bounceVec.y, bounceVec.x) + Math.PI / 2.0;
+    if (!lockObj2) {
+      dot2 = currentVec2.dot(bounceVec2);
+
+      if (dot2 > 0.0) return true;
+      bounceVec2.x = currentVec2.x - bounceVec2.x * dot2 * 2.0;
+      bounceVec2.y = currentVec2.y - bounceVec2.y * dot2 * 2.0;
+
+      obj2.rot = -Math.atan2(bounceVec2.y, bounceVec2.x) + Math.PI / 2.0;
+    }
+
     return false;
   }
 }

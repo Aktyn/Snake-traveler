@@ -57,9 +57,11 @@ function rgb(r: number, g: number, b: number): Color {
 export const Palette = {
   WHITE: rgb(255, 255, 255),
   BLACK: rgb(0, 0, 0),
+  HEALTH_BAR: rgb(229, 115, 115),
   PLAYER: rgb(239, 83, 80),
   BULLET: rgb(255, 171, 145),
-  ENEMY_SPAWNER: rgb(244, 67, 54)
+  ENEMY_SPAWNER: rgb(244, 67, 54),
+  SPIKY_ENEMY: rgb(255, 112, 67)
 };
 
 export const Biomes = [

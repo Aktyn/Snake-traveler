@@ -7,12 +7,14 @@ import { Palette } from '../../common/colors';
 const BULLET_SIZE = 0.02;
 const BULLET_SPEED = 1;
 const BULLET_LIFETIME = 5;
+const DEFAULT_BULLET_POWER = 0.2;
 
 export default class Bullet extends DynamicObject implements Updatable {
   private static readonly entityName = 'player';
   public static readonly explosionRadius = 0.1;
 
   private timer = 0;
+  public power = DEFAULT_BULLET_POWER;
 
   constructor(x: number, y: number, rot: number, entities: Entities) {
     super(x, y, BULLET_SIZE, BULLET_SIZE, entities, SensorShapes.BULLET);

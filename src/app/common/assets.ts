@@ -16,7 +16,9 @@ const Assets = {
     'player_segment.png': null,
     'double_gun.png': null,
     'bullet.png': null,
-    'enemy_spawner.png': null
+    'enemy_spawner.png': null,
+    'spiky_enemy.png': null,
+    'pixel.png': null
   } as { [_: string]: HTMLImageElement | null },
   emptyTexture: new Image()
 };

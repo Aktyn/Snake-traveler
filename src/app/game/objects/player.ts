@@ -25,13 +25,13 @@ export default class Player extends DynamicObject implements Updatable {
     super.color = Palette.PLAYER;
 
     for (let i = 1; i <= 4; i++) {
-      const segment = new PlayerSegment(x, y /* - (this.height + PlayerSegment.offset) * 2 * i*/, map.entities);
+      const segment = new PlayerSegment(x, y, map.entities);
       this.segments.push(segment);
       map.addObject(segment);
     }
 
     this.weapon = new DoubleGun(x, y, map);
-    this.weapon.color = this.color; //.clone();
+    this.weapon.color = this.color;
     //this.weapon.color.alpha = 0.95;
 
     this.entities.addObject(Player.entityName, this);

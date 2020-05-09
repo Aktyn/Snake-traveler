@@ -17,6 +17,10 @@ interface Schema {
 }
 
 const Predefined = {
+  block: {
+    layer: Layers.BACKGROUND,
+    texture: 'pixel.png'
+  },
   doubleGun: {
     layer: Layers.FOREGROUND,
     texture: 'double_gun.png'
@@ -36,6 +40,10 @@ const Predefined = {
   enemySpawner: {
     layer: Layers.FOREGROUND,
     texture: 'enemy_spawner.png'
+  },
+  spikyEnemy: {
+    layer: Layers.FOREGROUND,
+    texture: 'spiky_enemy.png'
   }
 };
 
