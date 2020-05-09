@@ -1,6 +1,6 @@
 import WeaponBase from './weaponBase';
 import WorldMap from '../worldMap';
-import Bullet from './bullet';
+import PlayerBullet from './playerBullet';
 
 const SHOOTING_FREQUENCY = 0.2; //shoot every x seconds
 
@@ -35,10 +35,10 @@ export default class DoubleGun extends WeaponBase {
     const offSideY = Math.sin(this.fixedRot + Math.PI / 2) * this.height * sideOffset;
 
     this.map.addObject(
-      new Bullet(this.x + offForwardX + offSideX, this.y + offForwardY + offSideY, this.rot, this.map.entities)
+      new PlayerBullet(this.x + offForwardX + offSideX, this.y + offForwardY + offSideY, this.rot, this.map.entities)
     );
     this.map.addObject(
-      new Bullet(this.x + offForwardX - offSideX, this.y + offForwardY - offSideY, this.rot, this.map.entities)
+      new PlayerBullet(this.x + offForwardX - offSideX, this.y + offForwardY - offSideY, this.rot, this.map.entities)
     );
   }
 }

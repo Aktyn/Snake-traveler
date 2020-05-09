@@ -4,34 +4,38 @@ import { Updatable } from '../updatable';
 import Entities from '../entities';
 import { Palette } from '../../common/colors';
 
-const BULLET_SIZE = 0.02;
-const BULLET_SPEED = 1;
-const BULLET_LIFETIME = 5;
-const DEFAULT_BULLET_POWER = 0.2;
+const defaultParams = {
+  speed: 1,
+  lifetime: 5,
+  power: 0.2,
+  explosionRadius: 0
+};
 
-export default class Bullet extends DynamicObject implements Updatable {
-  private static readonly entityName = 'player';
-  public static readonly explosionRadius = 0.1;
-
+export default abstract class Bullet extends DynamicObject implements Updatable {
   private timer = 0;
-  public power = DEFAULT_BULLET_POWER;
+  public readonly params: typeof defaultParams;
 
-  constructor(x: number, y: number, rot: number, entities: Entities) {
-    super(x, y, BULLET_SIZE, BULLET_SIZE, entities, SensorShapes.BULLET);
+  constructor(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    rot: number,
+    entities: Entities,
+    shape = SensorShapes.BULLET,
+    color = Palette.BULLET,
+    params: Partial<typeof defaultParams> = defaultParams
+  ) {
+    super(x, y, width, height, entities, shape);
     super.setRot(rot);
-    this.color = Palette.BULLET;
-
-    this.entities.addObject(Bullet.entityName, this);
-  }
-
-  destroy() {
-    this.entities.removeObject(Bullet.entityName, this);
+    this.color = color;
+    this.params = Object.assign({ ...defaultParams }, params);
   }
 
   update(delta: number) {
-    super.moveForward(delta * BULLET_SPEED);
+    super.moveForward(delta * this.params.speed);
 
-    if ((this.timer += delta) > BULLET_LIFETIME) {
+    if ((this.timer += delta) > this.params.lifetime) {
       this.deleted = true;
     }
   }

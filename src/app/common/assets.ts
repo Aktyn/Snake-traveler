@@ -16,6 +16,7 @@ const Assets = {
     'player_segment.png': null,
     'double_gun.png': null,
     'bullet.png': null,
+    'spike_bullet.png': null,
     'enemy_spawner.png': null,
     'spiky_enemy.png': null,
     'pixel.png': null

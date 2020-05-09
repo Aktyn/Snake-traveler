@@ -1,3 +1,5 @@
+import { mix } from './utils';
+
 const toHexString = (number: number) => '#' + ('000000' + number.toString(16)).substr(-6);
 
 /*export interface ColorI {
@@ -42,26 +44,28 @@ export class Color {
   }
 }
 
-function rgb(r: number, g: number, b: number): Color {
-  return new Color(r, g, b);
+function rgb(r: number, g: number, b: number, alpha?: number): Color {
+  return new Color(r, g, b, alpha);
 }
 
-/*export function mixColors(color1: ColorI, color2: ColorI, factor: number) {
+export function mixColors(color1: Color, color2: Color, factor: number) {
   return rgb(
     mix(color1.byteBuffer[0], color2.byteBuffer[0], factor) | 0,
     mix(color1.byteBuffer[1], color2.byteBuffer[1], factor) | 0,
     mix(color1.byteBuffer[2], color2.byteBuffer[2], factor) | 0
   );
-}*/
+}
 
 export const Palette = {
   WHITE: rgb(255, 255, 255),
   BLACK: rgb(0, 0, 0),
-  HEALTH_BAR: rgb(229, 115, 115),
+  HEALTH_BAR_GREEN: rgb(76, 175, 80),
+  HEALTH_BAR_RED: rgb(244, 67, 54),
   PLAYER: rgb(239, 83, 80),
   BULLET: rgb(255, 171, 145),
   ENEMY_SPAWNER: rgb(244, 67, 54),
-  SPIKY_ENEMY: rgb(255, 112, 67)
+  SPIKY_ENEMY_ORANGE: rgb(255, 112, 67),
+  SPIKY_ENEMY_RED: rgb(229, 115, 115)
 };
 
 export const Biomes = [

@@ -29,6 +29,10 @@ const Predefined = {
     layer: Layers.FOREGROUND,
     texture: 'bullet.png'
   },
+  spikeBullet: {
+    layer: Layers.FOREGROUND,
+    texture: 'spike_bullet.png'
+  },
   player: {
     layer: Layers.FOREGROUND,
     texture: 'player.png'

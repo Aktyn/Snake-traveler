@@ -19,6 +19,8 @@ import EnemySpawner from './objects/enemySpawner';
 import PlayerSegment from './objects/playerSegment';
 import EnemyBase from './objects/enemyBase';
 import SpikyEnemy from './objects/spikyEnemy';
+import PlayerBullet from './objects/playerBullet';
+import SpikeBullet from './objects/spikeBullet';
 
 type Class = { new (...args: any[]): any };
 
@@ -305,7 +307,15 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
   onPainterCollision(object: DynamicObject, collisionX: number, collisionY: number) {
     if (object instanceof Bullet) {
-      this.painter.clearCircle(this.chunksGrid, this.centerChunkPos, collisionX, collisionY, Bullet.explosionRadius);
+      if (object.params.explosionRadius > 0) {
+        this.painter.clearCircle(
+          this.chunksGrid,
+          this.centerChunkPos,
+          collisionX,
+          collisionY,
+          object.params.explosionRadius
+        );
+      }
       object.deleted = true;
     } else {
       if (object instanceof SpikyEnemy) {
@@ -333,16 +343,22 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   }
 
   private onBulletCollision(bullet: Bullet, otherObject: DynamicObject) {
-    if (this.isObjectOfInstances(otherObject, [EnemyBase as never])) {
-      const enemy = otherObject as EnemyBase;
-      enemy.onHit(bullet.power);
-      if (!enemy.alive) {
-        //TODO: score points from killing an enemy
+    if (bullet instanceof PlayerBullet) {
+      if (this.isObjectOfInstances(otherObject, [EnemyBase as never])) {
+        const enemy = otherObject as EnemyBase;
+        enemy.onHit(bullet.params.power);
+        if (!enemy.alive) {
+          //TODO: score points from killing an enemy
+        }
       }
-    }
 
-    if (!this.isObjectOfInstances(otherObject, [PlayerSegment])) {
-      bullet.deleted = true;
+      if (!this.isObjectOfInstances(otherObject, [PlayerSegment])) {
+        bullet.deleted = true;
+      }
+    } else if (bullet instanceof SpikeBullet) {
+      if (!this.isObjectOfInstances(otherObject, [EnemyBase as never])) {
+        bullet.deleted = true;
+      }
     }
   }
 
@@ -352,12 +368,12 @@ export default class WorldMap extends CollisionDetector implements Updatable {
       return;
     }
 
-    if (this.isObjectOfInstances(object1, [Bullet])) {
+    if (this.isObjectOfInstances(object1, [Bullet as never])) {
       this.onBulletCollision(object1 as never, object2);
       return;
     }
 
-    if (this.isObjectOfInstances(object2, [Bullet])) {
+    if (this.isObjectOfInstances(object2, [Bullet as never])) {
       this.onBulletCollision(object2 as never, object1);
       return;
     }
