@@ -90,9 +90,9 @@ const API = {
     return request(`/worlds/chunks`, METHOD.PUT, { body: fd });
   },
 
-  updatePlayerPosition(worldId: string, x: number, y: number) {
+  updateWorldData(worldId: string, { data }: WorldSchema) {
     return request(`/worlds/${worldId}/playerPos`, METHOD.PATCH, {
-      body: JSON.stringify({ x, y }),
+      body: JSON.stringify({ data }),
       headers: {
         'Content-Type': 'application/json'
       }

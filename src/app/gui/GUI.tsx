@@ -5,6 +5,7 @@ import useTranslation from '../main/hooks/useTranslation';
 import Settings from './Settings';
 import ConnectionStatus from './ConnectionStatus';
 import Worlds from '../main/Worlds';
+import PlayerStats from './PlayerStats';
 
 import { ReactComponent as SettingsIcon } from '../icons/cog.svg';
 import { ReactComponent as ListIcon } from '../icons/format-list-bulleted.svg';
@@ -53,6 +54,9 @@ const GUI = () => {
           </div>
           <span>{app.chosenWorld?.name}</span>
           <ConnectionStatus />
+        </div>
+        <div className="left">
+          <PlayerStats />
         </div>
       </div>
       <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title={t('title:settings').toUpperCase()}>

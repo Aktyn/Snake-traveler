@@ -26,5 +26,8 @@
     "steering": "Sterowanie",
     "keyboard": "Klawiatura",
     "mouse": "Mysz"
+  },
+  "gui": {
+    "score": "Punkty"
   }
 }

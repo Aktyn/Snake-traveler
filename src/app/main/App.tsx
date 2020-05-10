@@ -13,11 +13,17 @@ import Worlds from './Worlds';
 import { WorldSchema } from '../common/schemas';
 import useTranslation from './hooks/useTranslation';
 import MenuBackground from './components/MenuBackground';
+import Config from '../common/config';
 
 export interface AppContextSchema {
   setGamePaused: (paused: boolean) => void;
   loadWorld: (world: WorldSchema) => void;
+  setPlayerHealth: (segment: number, value: number) => void;
+  setScore: (score: number | ((score: number) => number)) => void;
+
   chosenWorld: WorldSchema | null;
+  playerHealth: number[];
+  score: number;
 }
 
 export const AppContext = React.createContext<AppContextSchema>({} as AppContextSchema);
@@ -27,6 +33,8 @@ function App() {
 
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [chosenWorld, setChosenWorld] = useState<WorldSchema | null>(null);
+  const [playerHealth, setPlayerHealth] = useState<number[]>(new Array(Config.PLAYER_SEGMENTS).fill(1));
+  const [score, setScore] = useState(0);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   const [renderer, setRenderer] = useState<RendererBase | null>(null);
@@ -42,11 +50,24 @@ function App() {
     },
     loadWorld: world => {
       if (world?.id !== chosenWorld?.id) {
+        //setPlayerHealth(health => health.map(() => 1));
+        setPlayerHealth(world.data.playerHealth);
+        setScore(world.data.score);
         setChosenWorld(world);
       }
     },
-    chosenWorld
+    setPlayerHealth: (segmentIndex, newValue) =>
+      setPlayerHealth(health => health.map((value, index) => (index === segmentIndex ? newValue : value))),
+    setScore,
+
+    chosenWorld,
+    playerHealth,
+    score
   };
+
+  useEffect(() => {
+    core?.getMap()?.setContext(definedContext);
+  }, [core, definedContext]);
 
   useEffect(() => {
     onAssetsLoaded(() => {
@@ -72,8 +93,9 @@ function App() {
   useEffect(() => {
     if (core && chosenWorld) {
       setMapLoaded(false);
-      core.init(chosenWorld, () => setMapLoaded(true));
+      core.init(chosenWorld, definedContext, () => setMapLoaded(true));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chosenWorld, core]);
 
   if (!webGL2Available) {

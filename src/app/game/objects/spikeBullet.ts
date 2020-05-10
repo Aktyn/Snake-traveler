@@ -5,8 +5,8 @@ import Bullet from './bullet';
 import Entities from '../entities';
 
 export const SPIKE_BULLET_SIZE = 0.02;
-const BULLET_SPEED = 1;
-const BULLET_LIFETIME = 3;
+const BULLET_SPEED = 0.5;
+const BULLET_LIFETIME = 16;
 
 export default class SpikeBullet extends Bullet {
   private static readonly entityName = 'spikeBullet';
@@ -15,7 +15,8 @@ export default class SpikeBullet extends Bullet {
     super(x, y, SPIKE_BULLET_SIZE, SPIKE_BULLET_SIZE, rot, entities, SensorShapes.SPIKE_BULLET, color, {
       speed: BULLET_SPEED,
       lifetime: BULLET_LIFETIME,
-      explosionRadius: 0
+      explosionRadius: 0,
+      power: 0.2
     });
 
     this.entities.addObject(SpikeBullet.entityName, this);

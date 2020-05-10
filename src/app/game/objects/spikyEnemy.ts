@@ -6,16 +6,17 @@ import SpikeBullet, { SPIKE_BULLET_SIZE } from './spikeBullet';
 
 const SPAWN_OFFSET = 0.001;
 const ROTATION_SPEED = Math.PI;
+const GROW_DURATION = 1;
 
 const MIN_SIZE = 0.05;
-const MAX_SIZE = 0.1;
+const MAX_SIZE = 0.15;
 
 const MIN_SPEED = 0.2;
-const MAX_SPEED = 0.5;
+const MAX_SPEED = 0.6;
 
-const MINIMUM_SHOOT_FREQUENCY = 10;
-const MAXIMUM_SHOOT_FREQUENCY = 60;
-const SPIKES = 12;
+const MINIMUM_SHOOT_FREQUENCY = 5;
+const MAXIMUM_SHOOT_FREQUENCY = 30;
+const SPIKES = 8;
 
 const randWithinRange = (min: number, max: number) => min + Math.random() * (max - min);
 
@@ -29,13 +30,16 @@ export default class SpikyEnemy extends EnemyBase {
 
   private spinAngle = 0;
   private shootTimer = getNextShootTimer();
+  private growTimer = 0;
+
+  public readonly strength = 0.2;
 
   constructor(x: number, y: number, map: WorldMap) {
-    super(0, 0, 1, 1, map, SensorShapes.CIRCLE);
+    super(0, 0, 0, 0, map, SensorShapes.CIRCLE);
 
     const randomInitialAngle = Math.random() * Math.PI * 2.0;
     super.setPos(x + Math.cos(randomInitialAngle) * SPAWN_OFFSET, y + Math.sin(randomInitialAngle) * SPAWN_OFFSET);
-    super.setScale(this.size, this.size);
+    super.setScale(0, 0);
     super.setRot(randomInitialAngle);
 
     super.color = mixColors(Palette.SPIKY_ENEMY_ORANGE, Palette.SPIKY_ENEMY_RED, Math.random());
@@ -54,6 +58,11 @@ export default class SpikyEnemy extends EnemyBase {
   }
 
   update(delta: number) {
+    if ((this.growTimer += delta) < GROW_DURATION) {
+      const scale = Math.min(1, (this.size * this.growTimer) / GROW_DURATION);
+      super.setScale(scale, scale);
+    }
+
     const angleStep = ROTATION_SPEED * delta;
     this.rot += angleStep;
     this.spinAngle += angleStep;

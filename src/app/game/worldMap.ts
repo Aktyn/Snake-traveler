@@ -21,8 +21,11 @@ import EnemyBase from './objects/enemyBase';
 import SpikyEnemy from './objects/spikyEnemy';
 import PlayerBullet from './objects/playerBullet';
 import SpikeBullet from './objects/spikeBullet';
+import { AppContextSchema } from '../main/App';
 
 type Class = { new (...args: any[]): any };
+
+const WORLD_DATA_UPDATE_FREQUENCY = 5; //seconds
 
 interface ChunkToSave {
   chunk: Chunk;
@@ -42,8 +45,11 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   private readonly world: WorldSchema;
   private readonly syncWorker: SyncWorkerI;
 
+  private _context: AppContextSchema;
+
   private cam: Camera;
   private targetPlayer: Player | null = null;
+  private worldDataUpdateTimer = 0;
 
   private readonly centerChunkPos: Vec2;
   private chunksGrid: Chunk[][] = getEmptyChunksGrid();
@@ -52,13 +58,14 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   private objects: Updatable[] = [];
   private dynamicObjects: DynamicObject[] = [];
 
-  constructor(world: WorldSchema, onLoad: (map: WorldMap) => void) {
+  constructor(world: WorldSchema, context: AppContextSchema, onLoad: (map: WorldMap) => void) {
     super();
     this.entities = new Entities();
     this.world = world;
+    this._context = context;
     postGenerateQueue.registerBatchLoad(() => onLoad(this));
 
-    this.centerChunkPos = Chunk.clampPos(world.playerPos[0], -world.playerPos[1]);
+    this.centerChunkPos = Chunk.clampPos(world.data.playerX, -world.data.playerY);
 
     console.log(`Map starting point: [${this.centerChunkPos.x}, ${this.centerChunkPos.y}]`);
 
@@ -88,6 +95,14 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     this.chunksGrid = [];
 
     this.entities.destroy();
+  }
+
+  get context() {
+    return this._context;
+  }
+
+  setContext(context: AppContextSchema) {
+    this._context = context;
   }
 
   getCenter() {
@@ -267,8 +282,8 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     this.cam.zoom(factor);
   }
 
-  spawnPlayer(posX: number, posY: number, setAsTarget = false): Player {
-    const player = new Player(posX, posY, this);
+  spawnPlayer(posX: number, posY: number, rot: number, setAsTarget = false): Player {
+    const player = new Player(posX, posY, rot, this);
     this.addObject(player);
 
     if (setAsTarget || !this.targetPlayer) {
@@ -348,7 +363,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
         const enemy = otherObject as EnemyBase;
         enemy.onHit(bullet.params.power);
         if (!enemy.alive) {
-          //TODO: score points from killing an enemy
+          this.context.setScore(score => score + 1);
         }
       }
 
@@ -356,15 +371,20 @@ export default class WorldMap extends CollisionDetector implements Updatable {
         bullet.deleted = true;
       }
     } else if (bullet instanceof SpikeBullet) {
-      if (!this.isObjectOfInstances(otherObject, [EnemyBase as never])) {
-        bullet.deleted = true;
+      if (this.isObjectOfInstances(otherObject, [EnemyBase as never])) {
+        return;
       }
+      if (this.isObjectOfInstances(otherObject, [Player, PlayerSegment])) {
+        (otherObject as Player | PlayerSegment).onHit(bullet.params.power);
+      }
+
+      bullet.deleted = true;
     }
   }
 
   //TODO: optimize by using object type enum instead of 'instance of' expression
   onDynamicObjectsCollision(object1: DynamicObject, object2: DynamicObject) {
-    if (this.objectsAreInstances(object1, object2, [PlayerSegment], [Player, PlayerSegment])) {
+    if (this.objectsAreInstances(object1, object2, [Player, PlayerSegment], [Player, PlayerSegment])) {
       return;
     }
 
@@ -398,9 +418,10 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     if (this.objectsAreInstances(object1, object2, [EnemyBase as never], [Player, PlayerSegment])) {
       const enemy = this.getObjectOfInstance(EnemyBase as never, object1, object2) as EnemyBase;
       enemy.deleted = true;
-      //TODO: player damage
+
+      const playerOrSegment = (enemy === object1 ? object2 : object1) as Player | PlayerSegment;
+      playerOrSegment.onHit(enemy.strength);
       //TODO: blood effect from the screen edges when enemy hits/bumps on player
-      //return;
     }
 
     super.bounceDynamicObjects(object1, object2);
@@ -453,15 +474,18 @@ export default class WorldMap extends CollisionDetector implements Updatable {
       }
 
       if (this.targetPlayer) {
-        if (
-          (this.targetPlayer.x - this.world.playerPos[0]) ** 2 + (this.targetPlayer.y - this.world.playerPos[1]) ** 2 >
-          1
-        ) {
-          API.updatePlayerPosition(this.world.id, this.targetPlayer.x, this.targetPlayer.y).catch(console.error);
+        if ((this.worldDataUpdateTimer += delta) >= WORLD_DATA_UPDATE_FREQUENCY) {
+          this.worldDataUpdateTimer -= WORLD_DATA_UPDATE_FREQUENCY;
 
-          this.world.playerPos[0] = this.targetPlayer.x;
-          this.world.playerPos[1] = this.targetPlayer.y;
+          this.world.data.playerHealth = this.context.playerHealth;
+          this.world.data.score = this.context.score;
+          this.world.data.playerX = this.targetPlayer.x;
+          this.world.data.playerY = this.targetPlayer.y;
+          this.world.data.playerRot = this.targetPlayer.rot;
+
+          API.updateWorldData(this.world.id, this.world).catch(console.error);
         }
+
         this.cam.follow(this.targetPlayer);
       }
       this.cam.update(delta);

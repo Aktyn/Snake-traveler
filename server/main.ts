@@ -111,7 +111,7 @@ app.put('/worlds/chunks', chunkUpload, (req, res) => {
 });
 
 app.patch('/worlds/:worldId/playerPos', (req, res) => {
-  if (!checkParams(req.params, 'worldId') || !checkParams(req.body, 'x', 'y')) {
+  if (!checkParams(req.params, 'worldId')) {
     res.status(422).send('Incorrect request parameters');
     return;
   }
@@ -123,7 +123,7 @@ app.patch('/worlds/:worldId/playerPos', (req, res) => {
       return;
     }
 
-    world.updatePlayerPos(req.body.x, req.body.y);
+    world.updateData(req.body.data);
     res.json({ success: true });
   } catch (e) {
     res.status(500).send(e.message);

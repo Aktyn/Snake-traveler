@@ -8,27 +8,42 @@ import WorldDatabase, { ChunkUpdateData } from './worldDatabase';
 
 const STAMP = Buffer.from('mgdlnkczmr');
 
-interface WorldSchema {
+export interface WorldSchema {
   id: string;
   name: string;
   seed: string;
-  playerPos: number[];
+  data: {
+    playerX: number;
+    playerY: number;
+    playerRot: number;
+    playerHealth: number[];
+    score: number;
+  };
 }
+
+const defaultData: WorldSchema['data'] = {
+  playerX: 0,
+  playerY: 0,
+  playerRot: 0,
+  playerHealth: new Array(5).fill(1), //array length must match number of player segments defined in client's config.ts file
+  score: 0
+};
 
 class World {
   public readonly id: string;
   private readonly name: string;
   private readonly seed: string;
   private readonly simplex: SimplexNoise;
-  private readonly playerPos: number[];
+  //private readonly playerPos: number[];
+  private readonly data: WorldSchema['data'];
 
   public readonly db: WorldDatabase;
 
-  constructor(name: string, seed: string, playerPos = [0, 0], id = uuid()) {
+  constructor(name: string, seed: string, data = defaultData, id = uuid()) {
     this.id = id;
     this.name = name;
     this.seed = seed;
-    this.playerPos = playerPos;
+    this.data = data;
     this.simplex = new SimplexNoise(seed);
 
     this.db = new WorldDatabase(path.join(dataFolder, `${this.id}.sqlite3`));
@@ -43,7 +58,7 @@ class World {
       id: this.id,
       name: this.name,
       seed: this.seed,
-      playerPos: this.playerPos
+      data: this.data
     };
   }
 
@@ -67,9 +82,8 @@ class World {
     this.db.saveLayers(data);
   }
 
-  updatePlayerPos(x: number, y: number) {
-    this.playerPos[0] = x;
-    this.playerPos[1] = y;
+  updateData(data: WorldSchema) {
+    Object.assign(this.data, data);
 
     updateWorldsList(worlds);
   }
@@ -86,7 +100,7 @@ const worlds: Map<string, World> = (() => {
     const worldsList: WorldSchema[] = JSON.parse(fs.readFileSync(worldsFile, 'utf8'));
     const worldsMap: Map<string, World> = new Map();
     for (const world of worldsList) {
-      worldsMap.set(world.id, new World(world.name, world.seed, world.playerPos, world.id));
+      worldsMap.set(world.id, new World(world.name, world.seed, world.data, world.id));
     }
     return worldsMap;
   } catch (e) {

@@ -5,6 +5,7 @@ import * as Debugger from '../debugger';
 import { Settings, SteeringType } from '../game/userSettings';
 import { WorldSchema } from '../common/schemas';
 import EnemySpawner from './objects/enemySpawner';
+import { AppContextSchema } from '../main/App';
 
 export default class Core {
   private animId = 0;
@@ -17,11 +18,12 @@ export default class Core {
 
   //time durations are given in seconds
   private readonly gameConfig = {
+    firstEnemySpawnerDelay: 10,
     enemySpawnerFrequency: 1,
     maxEnemySpawners: 16
   };
 
-  private enemySpawnerTimer = 0;
+  private enemySpawnerTimer = this.gameConfig.firstEnemySpawnerDelay;
 
   private readonly wheelListener = this.onWheel.bind(this);
   private readonly keyDownListener = this.onKeyDown.bind(this);
@@ -209,22 +211,26 @@ export default class Core {
     tick(0);
   }
 
-  private loadMap(world: WorldSchema, onMapFullyLoaded?: Function) {
-    return new WorldMap(world, (map: WorldMap) => {
-      map.spawnPlayer(world.playerPos[0], world.playerPos[1]);
+  private loadMap(world: WorldSchema, context: AppContextSchema, onMapFullyLoaded?: Function) {
+    return new WorldMap(world, context, (map: WorldMap) => {
+      map.spawnPlayer(world.data.playerX, world.data.playerY, world.data.playerRot);
       onMapFullyLoaded?.();
     });
   }
 
-  init(world: WorldSchema, onMapFullyLoaded?: Function) {
+  getMap() {
+    return this.map;
+  }
+
+  init(world: WorldSchema, context: AppContextSchema, onMapFullyLoaded?: Function) {
     if (this.map) {
       //core has been already initialized - just reload map with different world
       this.map.destroy();
-      this.map = this.loadMap(world, onMapFullyLoaded);
+      this.map = this.loadMap(world, context, onMapFullyLoaded);
       return;
     }
 
-    this.map = this.loadMap(world, onMapFullyLoaded);
+    this.map = this.loadMap(world, context, onMapFullyLoaded);
 
     this.startUpdateLoop();
     this.initControls();

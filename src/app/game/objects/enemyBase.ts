@@ -9,6 +9,7 @@ export default abstract class EnemyBase extends DynamicObject implements Updatab
 
   protected readonly map: WorldMap;
   private readonly healthBar: HealthBar;
+  public readonly strength: number = 0;
 
   constructor(
     x: number,

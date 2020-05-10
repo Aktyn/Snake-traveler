@@ -1,10 +1,10 @@
 import DynamicObject from './dynamicObject';
 import { Updatable } from '../updatable';
-import Entities from '../entities';
 import { SensorShapes } from '../physics/sensor';
 import { Palette } from '../../common/colors';
 import Vec2 from '../../common/math/vec2';
 import { angleLerp } from '../../common/utils';
+import WorldMap from '../worldMap';
 
 const DIFF_TOLERANCE = 0.001;
 const POSITION_SPEED = 12;
@@ -15,19 +15,53 @@ export default class PlayerSegment extends DynamicObject implements Updatable {
   public static readonly offset = 0;
   public static readonly defaultSize = 0.05;
 
+  private readonly map: WorldMap;
+
+  private readonly index: number;
+  public nextSegment: PlayerSegment | null = null;
+  private health = 1;
   private targetPos: Vec2;
 
-  constructor(x: number, y: number, entities: Entities) {
-    super(x, y, 1, 1, entities, SensorShapes.PLAYER);
+  constructor(x: number, y: number, map: WorldMap, index: number) {
+    super(x, y, 1, 1, map.entities, SensorShapes.PLAYER);
     super.setScale(PlayerSegment.defaultSize, PlayerSegment.defaultSize);
     super.color = Palette.PLAYER;
     this.targetPos = new Vec2(x, y);
+    this.index = index;
+    this.map = map;
 
     this.entities.addObject(PlayerSegment.entityName, this); //TODO: use static value from Player class
   }
 
   destroy() {
     this.entities.removeObject(PlayerSegment.entityName, this);
+  }
+
+  onHit(damage: number) {
+    if (this.nextSegment?.getHeath()) {
+      this.nextSegment.onHit(damage);
+    } else {
+      this.health = Math.max(0, this.health - damage);
+      this.map.context.setPlayerHealth(this.index, this.health);
+    }
+
+    if (this.health < 1e-8) {
+      this.health = 0;
+      this.deleted = true;
+    }
+  }
+
+  getHeath() {
+    return this.health;
+  }
+
+  setHealth(value: number) {
+    this.health = value;
+
+    if (this.health < 1e-8) {
+      this.health = 0;
+      this.deleted = true;
+    }
   }
 
   setTargetPos(x: number, y: number) {
