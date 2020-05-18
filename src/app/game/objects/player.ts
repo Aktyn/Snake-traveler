@@ -9,7 +9,7 @@ import WeaponBase from './weaponBase';
 import DoubleGun from './doubleGun';
 import Config from '../../common/config';
 
-const MAX_PLAYER_SPEED = 0.33;
+export const MAX_PLAYER_SPEED = 0.33;
 const ACCELERATION = MAX_PLAYER_SPEED; //speed to maximum in a second
 
 export default class Player extends DynamicObject implements Updatable {
@@ -92,19 +92,24 @@ export default class Player extends DynamicObject implements Updatable {
     });
   }
 
+  private updateSpeed(speed: number) {
+    this.speed = speed;
+    this.map.context.setPlayerSpeed(this.speed);
+  }
+
   update(delta: number) {
     console.log(this.x, this.y, this.rot);
     if (this.steering.up) {
-      this.speed = Math.min(MAX_PLAYER_SPEED, this.speed + delta * ACCELERATION);
+      this.updateSpeed(Math.min(MAX_PLAYER_SPEED, this.speed + delta * ACCELERATION));
     }
     if (this.steering.down) {
-      this.speed = Math.max(0, this.speed - delta * ACCELERATION);
+      this.updateSpeed(Math.max(0, this.speed - delta * ACCELERATION));
     }
     if (this.steering.left) {
-      this.rot -= delta * this.rotationSpeed; //TODO: verify this * (this.speed / MAX_PLAYER_SPEED);
+      this.rot -= delta * this.rotationSpeed;
     }
     if (this.steering.right) {
-      this.rot += delta * this.rotationSpeed; //TODO: verify this * (this.speed / MAX_PLAYER_SPEED);
+      this.rot += delta * this.rotationSpeed;
     }
 
     super.moveForward(this.speed * delta);

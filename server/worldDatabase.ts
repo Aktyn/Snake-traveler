@@ -28,7 +28,7 @@ export default class WorldDatabase {
     try {
       fs.unlinkSync(this.filePath);
     } catch (e) {
-      console.error(e);
+      console.error('Cannot delete database file:', e);
     }
   }
 

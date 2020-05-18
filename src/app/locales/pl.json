@@ -28,6 +28,7 @@
     "mouse": "Mysz"
   },
   "gui": {
-    "score": "Punkty"
+    "score": "Punkty",
+    "speed": "Prędkość"
   }
 }
