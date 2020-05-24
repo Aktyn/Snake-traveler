@@ -104,14 +104,9 @@ export const saveQueue = (() => {
         x: chunk.x * Chunk.RESOLUTION,
         y: chunk.y * Chunk.RESOLUTION,
         foregroundData
-        //backgroundData: chunkData.saveBackground ? await canvasToBlob(chunkData.chunk.canvases.background) : undefined
       });
     }
 
-    /*for (const chunk of savingChunks) { //moved inside above loop
-      registeredChunks.delete(chunk);
-    }*/
-    //console.log('updating chunks:', requestPayload.length);
     await API.updateChunks(requestPayload).catch(e => {
       if (e === CustomError.TIMEOUT) {
         //try again
@@ -130,6 +125,28 @@ export const saveQueue = (() => {
 
       if (!queueTimeout) {
         queueTimeout = setTimeout(setQueueTimeout, 1000 / 60);
+      }
+    },
+    async finalize() {
+      if (queueTimeout) {
+        clearTimeout(queueTimeout);
+
+        const remainingChunks = Array.from(registeredChunks);
+        const requestPayload: ChunkUpdateData[] = [];
+
+        for (const chunk of remainingChunks) {
+          const foregroundData = await canvasToBlob(chunk.canvases.foreground);
+
+          requestPayload.push({
+            worldId: chunk.world.id,
+            x: chunk.x * Chunk.RESOLUTION,
+            y: chunk.y * Chunk.RESOLUTION,
+            foregroundData
+          });
+        }
+        API.updateChunks(requestPayload);
+
+        registeredChunks.clear();
       }
     }
   };

@@ -1,10 +1,13 @@
 import React from 'react';
 
+const mainColor = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
+const mainColorLight = getComputedStyle(document.documentElement).getPropertyValue('--main-color-light');
+
 const palette = [
-  { from: '#F8BBD0', to: '#BA68C8' },
-  { from: '#ef5350', to: '#fff' },
-  { from: '#fff', to: '#7986CB' },
-  { from: '#81C784', to: '#fff' }
+  { from: mainColorLight, to: mainColor },
+  { from: mainColor, to: mainColorLight },
+  { from: mainColorLight, to: mainColor },
+  { from: mainColor, to: mainColorLight }
 ];
 
 export default function MenuBackground() {

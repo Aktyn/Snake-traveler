@@ -14,10 +14,12 @@ import { WorldSchema } from '../common/schemas';
 import useTranslation from './hooks/useTranslation';
 import MenuBackground from './components/MenuBackground';
 import Config from '../common/config';
+import HomeHeader from './components/HomeHeader';
+import Footer from './components/Footer';
 
 export interface AppContextSchema {
   setGamePaused: (paused: boolean) => void;
-  loadWorld: (world: WorldSchema) => void;
+  loadWorld: (world: WorldSchema | null) => void;
   setPlayerHealth: (segment: number, value: number) => void;
   setPlayerSpeed: (value: number) => void;
   setScore: (score: number | ((score: number) => number)) => void;
@@ -47,17 +49,28 @@ function App() {
 
   const webGL2Available = useMemo(isWebGL2Available, []);
 
+  function setDefaults() {
+    setMapLoaded(false);
+    setPlayerSpeed(0);
+  }
+
   const definedContext: AppContextSchema = {
     setGamePaused: paused => {
       renderer?.setBlur(paused ? 10 : 0);
       core?.setPaused(paused);
     },
     loadWorld: world => {
+      core?.getMap()?.synchronizeWorldData();
       if (world && world?.id !== chosenWorld?.id) {
         setPlayerHealth(world.data.playerHealth);
         setScore(world.data.score);
-        setChosenWorld(world);
+      } else {
+        setDefaults();
+        setScore(0);
+        setPlayerHealth(new Array(Config.PLAYER_SEGMENTS).fill(1));
+        core?.unload();
       }
+      setChosenWorld(world);
     },
     setPlayerHealth: (segmentIndex, newValue) =>
       setPlayerHealth(health => health.map((value, index) => (index === segmentIndex ? newValue : value))),
@@ -98,7 +111,7 @@ function App() {
 
   useEffect(() => {
     if (core && chosenWorld) {
-      setMapLoaded(false);
+      setDefaults();
       core.init(chosenWorld, definedContext, () => setMapLoaded(true));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,9 +125,13 @@ function App() {
     return (
       <div className="fullscreen center-content">
         <MenuBackground />
-        <AppContext.Provider value={definedContext}>
-          <Worlds />
-        </AppContext.Provider>
+        <div className="home-layout">
+          <HomeHeader />
+          <AppContext.Provider value={definedContext}>
+            <Worlds />
+          </AppContext.Provider>
+          <Footer />
+        </div>
       </div>
     );
   }

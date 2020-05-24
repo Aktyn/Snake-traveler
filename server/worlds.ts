@@ -21,13 +21,14 @@ export interface WorldSchema {
   };
 }
 
-const defaultData: WorldSchema['data'] = {
-  playerX: 0,
-  playerY: 0,
-  playerRot: 0,
-  playerHealth: new Array(5).fill(1), //array length must match number of player segments defined in client's config.ts file
-  score: 0
-};
+const getDefaultData = () =>
+  ({
+    playerX: 0,
+    playerY: 0,
+    playerRot: 0,
+    playerHealth: new Array(5).fill(1), //array length must match number of player segments defined in client's config.ts file
+    score: 0
+  } as WorldSchema['data']);
 
 class World {
   public readonly id: string;
@@ -39,7 +40,7 @@ class World {
 
   public readonly db: WorldDatabase;
 
-  constructor(name: string, seed: string, data = defaultData, id = uuid()) {
+  constructor(name: string, seed: string, data = getDefaultData(), id = uuid()) {
     this.id = id;
     this.name = name;
     this.seed = seed;
@@ -121,8 +122,6 @@ function updateWorldsList(_worlds: Map<string, World>) {
 }
 
 export function addWorld(name: string, seed: string): World {
-  //TODO: maximum number of worlds
-
   const world = new World(name, seed);
   worlds.set(world.id, world);
   updateWorldsList(worlds);

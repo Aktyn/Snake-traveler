@@ -1,0 +1,18 @@
+:root {
+  --main-color-lighter: #26C6DA;
+  --main-color-light: #00ACC1;
+  --main-color: #0097A7;
+  --main-color-dark: #00838F;
+  --main-color-darker: #004D40;
+
+  --selected-color: #FFAB91;
+
+  --disabled-color: #599ea6;
+
+  --box-shadow-light: #00aec0;
+  --box-shadow-dark: #00808e;
+
+  --shadow: 5px 5px 14px var(--box-shadow-dark), -5px -5px 14px var(--box-shadow-light);
+  --shadow-small: 2px 2px 5px var(--box-shadow-dark), -2px -2px 5px var(--box-shadow-light);
+  --shadow-small-reversed: inset 2px 2px 3px var(--box-shadow-dark), inset -2px -2px 3px var(--box-shadow-light);
+}

@@ -23,9 +23,9 @@ export default class Player extends DynamicObject implements Updatable {
   private weapon: WeaponBase;
 
   constructor(x: number, y: number, rot: number, map: WorldMap) {
-    super(x, y, 1, 1, map.entities, SensorShapes.PLAYER);
+    super(x || 1e-8, y || 1e-8, 1, 1, map.entities, SensorShapes.PLAYER);
     super.setScale(PlayerSegment.defaultSize, PlayerSegment.defaultSize);
-    super.setRot(rot);
+    super.setRot(rot || 1e-8);
     super.color = Palette.PLAYER;
     this.map = map;
     this.health = map.context.playerHealth[0] ?? 1;
@@ -44,7 +44,6 @@ export default class Player extends DynamicObject implements Updatable {
         }
       }
     }
-    console.log(this.x, this.y, this.rot);
 
     this.weapon = new DoubleGun(x, y, map);
     this.weapon.color = this.color;
@@ -98,7 +97,6 @@ export default class Player extends DynamicObject implements Updatable {
   }
 
   update(delta: number) {
-    console.log(this.x, this.y, this.rot);
     if (this.steering.up) {
       this.updateSpeed(Math.min(MAX_PLAYER_SPEED, this.speed + delta * ACCELERATION));
     }

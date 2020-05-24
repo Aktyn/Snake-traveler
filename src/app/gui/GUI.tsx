@@ -7,10 +7,13 @@ import ConnectionStatus from './ConnectionStatus';
 import Worlds from '../main/Worlds';
 import PlayerStats from './PlayerStats';
 
+import { ReactComponent as HomeIcon } from '../icons/home.svg';
 import { ReactComponent as SettingsIcon } from '../icons/cog.svg';
 import { ReactComponent as ListIcon } from '../icons/format-list-bulleted.svg';
 
 import '../../styles/gui.css';
+
+const iconProps = { className: 'rotating-icon', fill: '#fff', width: 24, height: 24 };
 
 const GUI = () => {
   const t = useTranslation();
@@ -36,21 +39,9 @@ const GUI = () => {
       <div className="fullscreen gui-main">
         <div className="top">
           <div>
-            <SettingsIcon
-              onClick={() => setSettingsOpen(true)}
-              className="rotating-icon"
-              fill="#fff"
-              width={24}
-              height={24}
-            />
-            <ListIcon
-              onClick={() => setWorldsOpen(true)}
-              className="rotating-icon"
-              style={{ marginLeft: '8px' }}
-              fill="#fff"
-              width={24}
-              height={24}
-            />
+            <HomeIcon onClick={() => app.loadWorld(null)} {...iconProps} />
+            <SettingsIcon onClick={() => setSettingsOpen(true)} style={{ marginLeft: '8px' }} {...iconProps} />
+            <ListIcon onClick={() => setWorldsOpen(true)} style={{ marginLeft: '8px' }} {...iconProps} />
           </div>
           <span>{app.chosenWorld?.name}</span>
           <ConnectionStatus />

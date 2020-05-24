@@ -1,22 +1,15 @@
 @import "./common/index.css";
+@import "./layouts.css";
 
 html, body {
   margin: 0;
   font-family: 'Roboto', 'Droid Sans', 'Helvetica Neue', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #009688;
-  /* background-image: linear-gradient(150deg, #006064, #26A69A, #00796B); */
   height: 100%;
   color: #fff;
-}
-
-button:not(:disabled), input[type=submit] {
-  cursor: pointer;
-}
-
-button:disabled {
-  background-color: #B0BEC5;
+  text-shadow: 0 0 1px #0002;
+  background-color: var(--main-color);
 }
 
 hr {
@@ -31,20 +24,16 @@ input {
 
 input[type=text] {
   padding: 4px;
-  border: 1px solid #80CBC4;
+  /* border: 1px solid #80CBC4; */
+  border: none;
   border-radius: 4px;
-  color: #004D40;
-  box-shadow: 0px 1px 2px #0004;
+  color: #fff;
+  box-shadow: var(--shadow-small-reversed);
+  background-color: var(--main-color-light);
 }
 
 input[type=text]:focus {
   border-color: #004D40;
-}
-
-.layout {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
 }
 
 .debug-info {
@@ -58,7 +47,7 @@ input[type=text]:focus {
 
 /* menu-background */
 .menu-background {
-  background-image: linear-gradient(135deg, #673AB7, #4DB6AC, #4DD0E1);
+  background: linear-gradient(120deg, var(--main-color-light), var(--main-color-dark));
   overflow: hidden;
 }
 
@@ -68,9 +57,8 @@ input[type=text]:focus {
   height: 200vh;
   position: absolute;
   transform: translate(-50%, -50%) rotate(45deg) translateY(-100%);
-  background-color: red;
   border-radius: 100px;
-  box-shadow: 0px 0px 25px #0004;
+  box-shadow: var(--shadow);
   opacity: 0.5;
   animation: bold-item-slide 20s ease-in-out infinite;
 }

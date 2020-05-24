@@ -1,6 +1,6 @@
 import Camera from './objects/camera';
 import API, { CustomError } from '../common/api';
-import Chunk, { postGenerateQueue } from './chunk';
+import Chunk, { postGenerateQueue, saveQueue } from './chunk';
 import { Updatable } from './updatable';
 import Vec2 from '../common/math/vec2';
 import Player from './objects/player';
@@ -12,9 +12,7 @@ import ObjectBase from './objects/objectBase';
 import Bullet from './objects/bullet';
 import Painter from './painter';
 import { WorldSchema } from '../common/schemas';
-//@ts-ignore
-// eslint-disable-next-line import/no-webpack-loader-syntax
-import syncWorker from 'workerize-loader!./serverSyncWorker';
+
 import EnemySpawner from './objects/enemySpawner';
 import PlayerSegment from './objects/playerSegment';
 import EnemyBase from './objects/enemyBase';
@@ -43,7 +41,6 @@ const getEmptyChunksGrid = (): Chunk[][] =>
 export default class WorldMap extends CollisionDetector implements Updatable {
   public readonly entities: Entities;
   private readonly world: WorldSchema;
-  private readonly syncWorker: SyncWorkerI;
 
   private _context: AppContextSchema;
 
@@ -71,19 +68,11 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
     this.cam = new Camera(this.centerChunkPos.x * Chunk.SIZE * 2, -this.centerChunkPos.y * Chunk.SIZE * 2);
 
-    this.syncWorker = syncWorker();
-    this.syncWorker.run();
-
     this.reloadChunks().catch(console.error);
-
-    /*this.syncWorker.addEventListener('message', (message: any) => {
-      console.log('New Message: ', message.data);
-    });*/
   }
 
   destroy() {
-    //this.syncWorker.removeEventListener('message', func);
-    this.syncWorker.terminate();
+    //this.synchronizeWorldData();
 
     this.objects.forEach(obj => obj instanceof ObjectBase && obj.destroy());
     this.objects = [];
@@ -91,8 +80,10 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     this.dynamicObjects.forEach(obj => obj.destroy());
     this.dynamicObjects = [];
 
-    this.chunksGrid.forEach(col => col.forEach(chunk => chunk?.destroy()));
-    this.chunksGrid = [];
+    saveQueue.finalize().finally(() => {
+      this.chunksGrid.forEach(col => col.forEach(chunk => chunk?.destroy()));
+      this.chunksGrid = [];
+    });
 
     this.entities.destroy();
   }
@@ -461,6 +452,16 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     return true;
   }
 
+  synchronizeWorldData() {
+    this.world.data.playerHealth = this.context.playerHealth;
+    this.world.data.score = this.context.score;
+    this.world.data.playerX = this.targetPlayer?.x ?? 0;
+    this.world.data.playerY = this.targetPlayer?.y ?? 0;
+    this.world.data.playerRot = this.targetPlayer?.rot ?? 0;
+
+    API.updateWorldData(this.world.id, this.world).catch(console.error);
+  }
+
   update(delta: number) {
     const freezePhysics = !this.areNearbyChunksLoaded();
     if (!freezePhysics) {
@@ -476,14 +477,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
       if (this.targetPlayer) {
         if ((this.worldDataUpdateTimer += delta) >= WORLD_DATA_UPDATE_FREQUENCY) {
           this.worldDataUpdateTimer -= WORLD_DATA_UPDATE_FREQUENCY;
-
-          this.world.data.playerHealth = this.context.playerHealth;
-          this.world.data.score = this.context.score;
-          this.world.data.playerX = this.targetPlayer.x;
-          this.world.data.playerY = this.targetPlayer.y;
-          this.world.data.playerRot = this.targetPlayer.rot;
-
-          API.updateWorldData(this.world.id, this.world).catch(console.error);
+          this.synchronizeWorldData();
         }
 
         this.cam.follow(this.targetPlayer);

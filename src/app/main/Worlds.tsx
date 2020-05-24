@@ -58,7 +58,7 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
         setAvailableWorlds(res);
         setSelectedWorld(res.find(({ id }) => id === app.chosenWorld?.id) || res[0] || null);
 
-        app.loadWorld(res[0]); //TEMP
+        // app.loadWorld(res[0]); //TEMP
       })
       .finally(() => {
         setLoading(false);
@@ -87,9 +87,7 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
           <span />
           <span className="title">{t('availableWorlds')}</span>
           <div style={{ textAlign: 'right' }}>
-            <button className="action-button" onClick={() => onAddButtonClick()}>
-              +
-            </button>
+            <button className="add-close-button" onClick={() => onAddButtonClick()} />
           </div>
         </WorldFormHeader>
         {loading ? (
@@ -103,7 +101,16 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
                   key={i}
                   onClick={() => setSelectedWorld(world)}
                 >
-                  {world.name}
+                  <div>{world.name}</div>
+                  <div>
+                    {t('gui.score')}: {world.data.score}
+                  </div>
+                  <div>{t('gui.health')}:</div>
+                  <div className="health-stats">
+                    {world.data.playerHealth.map((bar, index) => (
+                      <span key={index} style={{ height: `${(bar * 100) | 0}%` }} />
+                    ))}
+                  </div>
                 </div>
               );
             })}
@@ -141,9 +148,7 @@ function WorldCreatorView({ onReturn }: { onReturn: Function }) {
         <span />
         <span className="title">{t('worldCreator')}</span>
         <div style={{ textAlign: 'right' }}>
-          <button className="action-button" onClick={() => onReturn()}>
-            &#9664;
-          </button>
+          <button className="add-close-button closer" onClick={() => onReturn()} />
         </div>
       </WorldFormHeader>
       <div>
@@ -171,7 +176,7 @@ export default function Worlds({ isModalContent }: WorldsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   return (
-    <div className={`worlds form-container${isModalContent ? ' no-box-shadow' : ''}`}>
+    <div className={`worlds form-container${isModalContent ? ' modal-content' : ''}`}>
       {showAddForm ? (
         <WorldCreatorView onReturn={() => setShowAddForm(false)} />
       ) : (

@@ -15,7 +15,6 @@ export default class WorldDatabase {
   private readonly db: sqlite.Database;
 
   private layerInsertQuery: sqlite.Statement | null = null;
-  //private layersInsertQueryNoBG: sqlite.Statement | null = null;
 
   constructor(filePath: string) {
     this.filePath = filePath;
@@ -24,11 +23,16 @@ export default class WorldDatabase {
     this.init();
   }
 
-  deleteFile() {
+  deleteFile(attempt = 0) {
     try {
+      //if database is not in use
       fs.unlinkSync(this.filePath);
     } catch (e) {
-      console.error('Cannot delete database file:', e);
+      if (attempt < 32) {
+        setTimeout(() => this.deleteFile(attempt + 1), 10000);
+      } else {
+        console.error('Cannot delete database file:', e);
+      }
     }
   }
 
@@ -67,14 +71,8 @@ export default class WorldDatabase {
   }
 
   saveLayers(data: ChunkUpdateData[]) {
-    //setTimeout(() => {
     try {
       this.layerInsertQuery = this.db.prepare('INSERT OR REPLACE INTO chunks VALUES (?,?,?)');
-      /*this.layersInsertQueryNoBG = this.db.prepare(
-          'INSERT OR REPLACE INTO chunks VALUES ($x,$y,$foreground, (SELECT background from chunks as ch2 WHERE ch2.x=$x AND ch2.y=$y))'
-        );*/
-      //let layersWithBgUpdate = false;
-      //let layersWithoutBgUpdate = false;
 
       for (const chunkData of data) {
         this.layerInsertQuery.run([chunkData.x | 0, chunkData.y | 0, chunkData.foreground], function(err) {
@@ -82,44 +80,11 @@ export default class WorldDatabase {
             console.error(err);
           }
         });
-        /*if (chunkData.background) {
-            layersWithBgUpdate = true;
-            this.layersInsertQuery.run(
-              [chunkData.x | 0, chunkData.y | 0, chunkData.foreground, chunkData.background],
-              function(err) {
-                if (err) {
-                  console.error(err);
-                }
-              }
-            );
-          } else {
-            layersWithoutBgUpdate = true;
-
-            this.layersInsertQueryNoBG.run(
-              {
-                $x: chunkData.x | 0,
-                $y: chunkData.y | 0,
-                $foreground: chunkData.foreground
-              },
-              function(err) {
-                if (err) {
-                  console.error(err);
-                }
-              }
-            );
-          }*/
       }
 
       this.layerInsertQuery.finalize();
-      /*if (layersWithBgUpdate) {
-          this.layersInsertQuery.finalize();
-        }
-        if (layersWithoutBgUpdate) {
-          this.layersInsertQueryNoBG.finalize();
-        }*/
     } catch (e) {
       console.error(e);
     }
-    //}, 1);
   }
 }

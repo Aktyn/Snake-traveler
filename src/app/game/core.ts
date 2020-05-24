@@ -242,6 +242,7 @@ export default class Core {
       this.map.destroy();
       this.map = null;
     }
+    this.animId++;
   }
 
   setPaused(paused: boolean) {

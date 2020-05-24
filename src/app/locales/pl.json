@@ -1,8 +1,13 @@
 {
+  "homeHeader": "Snake Traveler",
   "availableWorlds": "Dostępne światy",
   "worldCreator": "Generowanie nowego świata",
   "noAvailableWorlds": "Brak dostępnych światów",
   "loadingMap": "Ładowanie mapy",
+  "footer": {
+    "version": "Wersja",
+    "author": "Autor"
+  },
   "action": {
     "play": "Graj",
     "generateWorld": "Generuj świat",
@@ -29,6 +34,7 @@
   },
   "gui": {
     "score": "Punkty",
-    "speed": "Prędkość"
+    "speed": "Prędkość",
+    "health": "Zdrowie"
   }
 }
