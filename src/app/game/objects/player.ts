@@ -11,6 +11,8 @@ import Config from '../../common/config';
 
 export const MAX_PLAYER_SPEED = 0.33;
 const ACCELERATION = MAX_PLAYER_SPEED; //speed to maximum in a second
+const HEALING_SPEED = 0.01;
+const NEWLY_GROWN_SEGMENT_HEALTH = 0.01; //starts at 1 percent
 
 export default class Player extends DynamicObject implements Updatable {
   private static readonly entityName = 'player';
@@ -58,9 +60,12 @@ export default class Player extends DynamicObject implements Updatable {
   }
 
   onHit(damage: number) {
-    if (this.segments[0]?.getHeath()) {
-      this.segments[0].onHit(damage);
+    if (this.segments[0]?.getHealth()) {
+      const damageOverload = this.segments[0].onHit(damage);
       this.segments = this.segments.filter(({ deleted }) => !deleted);
+      if (damageOverload > 0) {
+        this.onHit(damageOverload);
+      }
     } else {
       this.health = Math.max(0, this.health - damage);
       this.map.context.setPlayerHealth(0, this.health);
@@ -69,6 +74,55 @@ export default class Player extends DynamicObject implements Updatable {
     if (this.health < 1e-8) {
       this.health = 0;
       //TODO: player is dead - game over
+    }
+  }
+
+  private growSegment(fromSegment: Player | PlayerSegment) {
+    const offsetX = Math.cos(-fromSegment.rot - Math.PI / 2) * PlayerSegment.defaultSize * 2;
+    const offsetY = Math.sin(-fromSegment.rot - Math.PI / 2) * PlayerSegment.defaultSize * 2;
+    const segment = new PlayerSegment(
+      fromSegment.x + offsetX,
+      fromSegment.y + offsetY,
+      this.map,
+      this.segments.length + 1
+    );
+    segment.setHealth(NEWLY_GROWN_SEGMENT_HEALTH);
+    this.segments.push(segment);
+    this.map.addObject(segment);
+
+    if (this.segments.length > 1) {
+      this.segments[this.segments.length - 2].nextSegment = segment;
+    }
+
+    return segment;
+  }
+
+  private heal(factor: number) {
+    if (this.segments.length) {
+      const lastSegment = this.segments[this.segments.length - 1];
+      if (lastSegment.deleted) {
+        this.segments = this.segments.filter(({ deleted }) => !deleted);
+        this.heal(factor);
+        return;
+      }
+      if (lastSegment.getHealth() < 1) {
+        lastSegment.heal(factor);
+      } else {
+        if (this.segments.length === Config.PLAYER_SEGMENTS - 1) {
+          return; //player has full health in every segment
+        } else {
+          const newSegment = this.growSegment(lastSegment);
+          this.map.context.setPlayerHealth(newSegment.index, newSegment.getHealth());
+        }
+      }
+    } else {
+      if (this.health < 1) {
+        this.health = Math.min(1, this.health + factor);
+        this.map.context.setPlayerHealth(0, this.health);
+      } else {
+        const newSegment = this.growSegment(this);
+        this.map.context.setPlayerHealth(newSegment.index, newSegment.getHealth());
+      }
     }
   }
 
@@ -114,7 +168,9 @@ export default class Player extends DynamicObject implements Updatable {
 
     this.updateDataForSegments();
 
-    //TODO: slow health regeneration over time
+    if (this.speed === MAX_PLAYER_SPEED) {
+      this.heal(HEALING_SPEED * delta);
+    }
 
     this.weapon.setPos(this.x, this.y);
     this.weapon.setRot(this.rot);

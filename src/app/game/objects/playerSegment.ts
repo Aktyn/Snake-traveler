@@ -17,7 +17,7 @@ export default class PlayerSegment extends DynamicObject implements Updatable {
 
   private readonly map: WorldMap;
 
-  private readonly index: number;
+  public readonly index: number;
   public nextSegment: PlayerSegment | null = null;
   private health = 1;
   private targetPos: Vec2;
@@ -38,20 +38,31 @@ export default class PlayerSegment extends DynamicObject implements Updatable {
   }
 
   onHit(damage: number) {
-    if (this.nextSegment?.getHeath()) {
-      this.nextSegment.onHit(damage);
+    if (this.nextSegment?.getHealth()) {
+      const damageOverload = this.nextSegment.onHit(damage);
+      if (damageOverload > 0) {
+        this.onHit(damageOverload);
+      }
     } else {
-      this.health = Math.max(0, this.health - damage);
-      this.map.context.setPlayerHealth(this.index, this.health);
+      this.health -= damage;
+      this.map.context.setPlayerHealth(this.index, Math.max(0, this.health));
     }
 
     if (this.health < 1e-8) {
+      const damageOverload = -this.health;
       this.health = 0;
       this.deleted = true;
+      return damageOverload;
     }
+    return 0;
   }
 
-  getHeath() {
+  heal(factor: number) {
+    this.health = Math.min(1, this.health + factor);
+    this.map.context.setPlayerHealth(this.index, this.health);
+  }
+
+  getHealth() {
     return this.health;
   }
 
@@ -61,6 +72,9 @@ export default class PlayerSegment extends DynamicObject implements Updatable {
     if (this.health < 1e-8) {
       this.health = 0;
       this.deleted = true;
+    }
+    if (this.health >= 1 - 1e-8) {
+      this.health = 1;
     }
   }
 
