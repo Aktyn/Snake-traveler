@@ -74,6 +74,7 @@ export default class Player extends DynamicObject implements Updatable {
     if (this.health < 1e-8) {
       this.health = 0;
       //TODO: player is dead - game over
+      console.log('Game over');
     }
   }
 

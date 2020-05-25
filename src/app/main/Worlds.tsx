@@ -8,6 +8,7 @@ import ConnectionStatus from '../gui/ConnectionStatus';
 
 import '../../styles/worlds.css';
 import Spinner from './components/Spinner';
+import { convertSecondsToTime } from '../common/utils';
 
 const getRandomSeed = (len = 16) => {
   const chars = 'abcdefghijklmnopqrstuvwxyz1234567890';
@@ -103,13 +104,18 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
                 >
                   <div>{world.name}</div>
                   <div>
+                    {t('gui.time')}: {convertSecondsToTime(world.data.time | 0, [':', ':', ''])}
+                  </div>
+                  <div>
                     {t('gui.score')}: {world.data.score}
                   </div>
-                  <div>{t('gui.health')}:</div>
-                  <div className="health-stats">
-                    {world.data.playerHealth.map((bar, index) => (
-                      <span key={index} style={{ height: `${(bar * 100) | 0}%` }} />
-                    ))}
+                  <div style={{ display: 'flex' }}>
+                    <div>{t('gui.health')}:</div>
+                    <div className="health-stats">
+                      {world.data.playerHealth.map((bar, index) => (
+                        <span key={index} style={{ height: `${(bar * 100) | 0}%` }} />
+                      ))}
+                    </div>
                   </div>
                 </div>
               );

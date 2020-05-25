@@ -23,10 +23,12 @@ export interface AppContextSchema {
   setPlayerHealth: (segment: number, value: number) => void;
   setPlayerSpeed: (value: number) => void;
   setScore: (score: number | ((score: number) => number)) => void;
+  setTime: (time: number | ((time: number) => number)) => void;
 
   chosenWorld: WorldSchema | null;
   playerHealth: number[];
   score: number;
+  time: number;
 
   playerSpeed: number;
 }
@@ -41,6 +43,7 @@ function App() {
   const [playerHealth, setPlayerHealth] = useState<number[]>(new Array(Config.PLAYER_SEGMENTS).fill(1));
   const [playerSpeed, setPlayerSpeed] = useState(0);
   const [score, setScore] = useState(0);
+  const [time, setTime] = useState(0);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   const [renderer, setRenderer] = useState<RendererBase | null>(null);
@@ -64,6 +67,7 @@ function App() {
       if (world && world?.id !== chosenWorld?.id) {
         setPlayerHealth(world.data.playerHealth);
         setScore(world.data.score);
+        setTime(world.data.time ?? 0);
       } else {
         setDefaults();
         setScore(0);
@@ -75,11 +79,13 @@ function App() {
     setPlayerHealth: (segmentIndex, newValue) =>
       setPlayerHealth(health => health.map((value, index) => (index === segmentIndex ? newValue : value))),
     setScore,
+    setTime,
     setPlayerSpeed,
 
     chosenWorld,
     playerHealth,
     score,
+    time,
 
     playerSpeed
   };

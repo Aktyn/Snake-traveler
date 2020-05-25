@@ -34,7 +34,13 @@
   },
   "gui": {
     "score": "Punkty",
+    "time": "Czas",
     "speed": "Prędkość",
     "health": "Zdrowie"
+  },
+  "time": {
+    "seconds": "sek",
+    "minutes": "min",
+    "hours": "godz"
   }
 }

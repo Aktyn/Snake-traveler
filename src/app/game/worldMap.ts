@@ -43,6 +43,8 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   private readonly world: WorldSchema;
 
   private _context: AppContextSchema;
+  private startingTime: number;
+  private timer = 0;
 
   private cam: Camera;
   private targetPlayer: Player | null = null;
@@ -60,6 +62,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
     this.entities = new Entities();
     this.world = world;
     this._context = context;
+    this.startingTime = context.time;
     postGenerateQueue.registerBatchLoad(() => onLoad(this));
 
     this.centerChunkPos = Chunk.clampPos(world.data.playerX, -world.data.playerY);
@@ -455,11 +458,19 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   synchronizeWorldData() {
     this.world.data.playerHealth = this.context.playerHealth;
     this.world.data.score = this.context.score;
+    this.world.data.time = this.context.time;
     this.world.data.playerX = this.targetPlayer?.x ?? 0;
     this.world.data.playerY = this.targetPlayer?.y ?? 0;
     this.world.data.playerRot = this.targetPlayer?.rot ?? 0;
 
     API.updateWorldData(this.world.id, this.world).catch(console.error);
+  }
+
+  private updateTimer(delta: number) {
+    //whole second elapsed
+    if ((this.timer | 0) < ((this.timer += delta) | 0)) {
+      this.context.setTime(this.startingTime + (this.timer | 0));
+    }
   }
 
   update(delta: number) {
@@ -483,6 +494,8 @@ export default class WorldMap extends CollisionDetector implements Updatable {
         this.cam.follow(this.targetPlayer);
       }
       this.cam.update(delta);
+
+      this.updateTimer(delta);
 
       this.updateChunks();
 

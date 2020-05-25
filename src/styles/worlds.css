@@ -54,16 +54,18 @@
   margin-bottom: 4px;
 }
 
-.worlds .worlds-list > * > .health-stats {
+.worlds .worlds-list > * .health-stats {
+  width: 100%;
   height: 18px;
+  flex: 1;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   text-align: center;
 }
 
-.worlds .worlds-list > * > .health-stats > * {/*single health bar indicator*/
-  margin: 0 2px;
+.worlds .worlds-list > * .health-stats > * {/*single health bar indicator*/
+  margin: 0 1px;
   border-radius: 2px;
   width: 11px;
   background-color: #fff8;

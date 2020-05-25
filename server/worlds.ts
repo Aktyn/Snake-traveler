@@ -18,6 +18,7 @@ export interface WorldSchema {
     playerRot: number;
     playerHealth: number[];
     score: number;
+    time: number;
   };
 }
 
@@ -27,7 +28,8 @@ const getDefaultData = () =>
     playerY: 0,
     playerRot: 0,
     playerHealth: new Array(5).fill(1), //array length must match number of player segments defined in client's config.ts file
-    score: 0
+    score: 0,
+    time: 0
   } as WorldSchema['data']);
 
 class World {

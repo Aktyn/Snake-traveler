@@ -3,6 +3,7 @@ import { AppContext } from '../main/App';
 import { mixColors, Palette } from '../common/colors';
 import useTranslation from '../main/hooks/useTranslation';
 import { MAX_PLAYER_SPEED } from '../game/objects/player';
+import { convertSecondsToTime } from '../common/utils';
 
 export default function PlayerStats() {
   const app = useContext(AppContext);
@@ -16,6 +17,9 @@ export default function PlayerStats() {
 
   return (
     <>
+      <div className="segment padded">
+        {t('gui.time')}: {convertSecondsToTime(app.time | 0, [':', ':', ''])}
+      </div>
       <div className="segment padded">
         {t('gui.score')}: {app.score | 0}
       </div>

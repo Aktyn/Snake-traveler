@@ -8,5 +8,6 @@ export interface WorldSchema {
     playerRot: number;
     playerHealth: number[];
     score: number;
+    time: number;
   };
 }
