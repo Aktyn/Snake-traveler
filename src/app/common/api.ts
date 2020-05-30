@@ -2,7 +2,7 @@ import { Biomes } from './colors';
 import Config from './config';
 import { WorldSchema } from './schemas';
 
-const BASE_URL = `http://localhost:${Config.SERVER_PORT}`;
+const BASE_URL = `http://${location.hostname}:${Config.SERVER_PORT}`;
 
 export enum CustomError {
   TIMEOUT
