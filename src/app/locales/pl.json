@@ -4,15 +4,18 @@
   "worldCreator": "Generowanie nowego świata",
   "noAvailableWorlds": "Brak dostępnych światów",
   "loadingMap": "Ładowanie mapy",
+  "gameOver": "Gra skończona",
   "footer": {
     "version": "Wersja",
     "author": "Autor"
   },
   "action": {
     "play": "Graj",
+    "reset": "Resetuj",
     "generateWorld": "Generuj świat",
     "delete": "Usuń",
-    "confirm": "Potwierdź"
+    "confirm": "Potwierdź",
+    "backToHomepage": "Wróć do strony głównej"
   },
   "status": {
     "connected": "Połączono",
@@ -36,7 +39,12 @@
     "score": "Punkty",
     "time": "Czas",
     "speed": "Prędkość",
-    "health": "Zdrowie"
+    "health": "Zdrowie",
+    "gameOverHeader": "Koniec gry",
+    "statistics": {
+      "worldTime": "Czas spędzony na tym świecie",
+      "points": "Zdobyte punkty"
+    }
   },
   "time": {
     "seconds": "sek",

@@ -75,11 +75,9 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleWorldDelete(world: WorldSchema) {
-    API.deleteWorld(world.id).then(() => {
-      reloadWorldsList();
-    });
-  }
+  const handleWorldDelete = (world: WorldSchema) => API.deleteWorld(world.id).then(reloadWorldsList);
+
+  const resetWorldProgress = (world: WorldSchema) => API.resetWorld(world.id).then(reloadWorldsList);
 
   return (
     <>
@@ -96,9 +94,10 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
         ) : availableWorlds.length ? (
           <div className="worlds-list">
             {availableWorlds.map((world, i) => {
+              const isOver = world.data.playerHealth[0] < 1e-8;
               return (
                 <div
-                  className={world === selectedWorld ? 'selected' : ''}
+                  className={[isOver && 'over', world === selectedWorld && 'selected'].filter(v => v).join(' ')}
                   key={i}
                   onClick={() => setSelectedWorld(world)}
                 >
@@ -109,13 +108,24 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
                   <div>
                     {t('gui.score')}: {world.data.score}
                   </div>
-                  <div style={{ display: 'flex' }}>
-                    <div>{t('gui.health')}:</div>
-                    <div className="health-stats">
-                      {world.data.playerHealth.map((bar, index) => (
-                        <span key={index} style={{ height: `${(bar * 100) | 0}%` }} />
-                      ))}
-                    </div>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      fontWeight: isOver ? 'bold' : 'inherit'
+                    }}
+                  >
+                    {isOver ? (
+                      <div>{t('gameOver')}</div>
+                    ) : (
+                      <>
+                        <div>{t('gui.health')}:</div>
+                        <div className="health-stats">
+                          {world.data.playerHealth.map((bar, index) => (
+                            <span key={index} style={{ height: `${(bar * 100) | 0}%` }} />
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -127,9 +137,17 @@ function WorldSelectionView({ onAddButtonClick }: { onAddButtonClick: Function }
       </div>
       <hr />
       <div>
-        <button disabled={!selectedWorld} onClick={() => selectedWorld && app.loadWorld(selectedWorld)}>
-          {t('action.play').toUpperCase()}
-        </button>
+        {selectedWorld?.data.playerHealth[0] === 0 ? (
+          <SafeButton
+            content={t('action.reset').toUpperCase()}
+            confirmContent={t('action.confirm').toUpperCase()}
+            onClick={() => resetWorldProgress(selectedWorld)}
+          />
+        ) : (
+          <button disabled={!selectedWorld} onClick={() => selectedWorld && app.loadWorld(selectedWorld)}>
+            {t('action.play').toUpperCase()}
+          </button>
+        )}
         <div style={{ margin: '8px 0' }} />
         <SafeButton
           disabled={!selectedWorld}

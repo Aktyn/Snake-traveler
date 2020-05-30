@@ -5,6 +5,7 @@ interface ModalI {
   open?: boolean;
   onClose?: Function;
   title?: string;
+  style?: React.CSSProperties;
 }
 
 export default function Modal(props: React.PropsWithChildren<ModalI>) {
@@ -25,18 +26,22 @@ export default function Modal(props: React.PropsWithChildren<ModalI>) {
       }}
     >
       <div className="modal-center">
-        <div className="modal-title">
-          <span style={{ width: '24px', marginRight: '16px' }} />
-          <span>{props.title}</span>
-          <CloseIcon
-            fill="#004D40"
-            width={24}
-            height={24}
-            style={{ marginLeft: '16px', cursor: 'pointer' }}
-            onClick={() => props.onClose?.()}
-          />
+        {props.title && (
+          <div className="modal-title">
+            <span style={{ width: '24px', marginRight: '16px' }} />
+            <span>{props.title}</span>
+            <CloseIcon
+              fill="#004D40"
+              width={24}
+              height={24}
+              style={{ marginLeft: '16px', cursor: 'pointer' }}
+              onClick={() => props.onClose?.()}
+            />
+          </div>
+        )}
+        <div className="modal" style={props.style}>
+          {props.children}
         </div>
-        <div className="modal">{props.children}</div>
       </div>
     </div>
   );

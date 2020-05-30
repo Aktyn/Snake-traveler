@@ -10,9 +10,11 @@ import PlayerStats from './PlayerStats';
 import { ReactComponent as HomeIcon } from '../icons/home.svg';
 import { ReactComponent as SettingsIcon } from '../icons/cog.svg';
 import { ReactComponent as ListIcon } from '../icons/format-list-bulleted.svg';
+import GameOverInfo from './GameOverInfo';
 
 import '../../styles/gui.css';
 
+const mainColor = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
 const iconProps = { className: 'rotating-icon', fill: '#fff', width: 24, height: 24 };
 
 const GUI = () => {
@@ -23,11 +25,12 @@ const GUI = () => {
   const [worldsOpen, setWorldsOpen] = useState(false);
 
   const worldId = app.chosenWorld?.id;
+  const gameOver = app.isGameOver();
 
   useEffect(() => {
-    app.setGamePaused(settingsOpen || worldsOpen);
+    app.setGamePaused(settingsOpen || worldsOpen || gameOver);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settingsOpen, worldsOpen]);
+  }, [gameOver, settingsOpen, worldsOpen]);
 
   useEffect(() => {
     setSettingsOpen(false);
@@ -50,6 +53,9 @@ const GUI = () => {
           <PlayerStats />
         </div>
       </div>
+      <Modal open={gameOver} style={{ backgroundColor: mainColor, color: '#fff' }}>
+        <GameOverInfo />
+      </Modal>
       <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title={t('title:settings').toUpperCase()}>
         <Settings />
       </Modal>

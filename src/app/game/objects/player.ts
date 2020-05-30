@@ -68,13 +68,12 @@ export default class Player extends DynamicObject implements Updatable {
       }
     } else {
       this.health = Math.max(0, this.health - damage);
-      this.map.context.setPlayerHealth(0, this.health);
+      this.map.context.setPlayerHealth(0, this.health < 1e-8 ? 0 : this.health);
     }
 
     if (this.health < 1e-8) {
       this.health = 0;
-      //TODO: player is dead - game over
-      console.log('Game over');
+      this.map.context.onPlayerDead();
     }
   }
 

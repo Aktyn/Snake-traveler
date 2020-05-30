@@ -20,6 +20,8 @@ import Footer from './components/Footer';
 export interface AppContextSchema {
   setGamePaused: (paused: boolean) => void;
   loadWorld: (world: WorldSchema | null) => void;
+  onPlayerDead: () => void;
+  isGameOver: () => boolean;
   setPlayerHealth: (segment: number, value: number) => void;
   setPlayerSpeed: (value: number) => void;
   setScore: (score: number | ((score: number) => number)) => void;
@@ -57,6 +59,8 @@ function App() {
     setPlayerSpeed(0);
   }
 
+  const isGameOver = () => playerHealth[0] < 1e-8;
+
   const definedContext: AppContextSchema = {
     setGamePaused: paused => {
       renderer?.setBlur(paused ? 10 : 0);
@@ -76,6 +80,11 @@ function App() {
       }
       setChosenWorld(world);
     },
+    onPlayerDead: () => {
+      setPlayerHealth(health => health.map(() => 0));
+      core?.getMap()?.synchronizeWorldData();
+    },
+    isGameOver,
     setPlayerHealth: (segmentIndex, newValue) =>
       setPlayerHealth(health => health.map((value, index) => (index === segmentIndex ? newValue : value))),
     setScore,

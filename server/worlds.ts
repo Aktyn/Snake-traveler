@@ -37,7 +37,6 @@ class World {
   private readonly name: string;
   private readonly seed: string;
   private readonly simplex: SimplexNoise;
-  //private readonly playerPos: number[];
   private readonly data: WorldSchema['data'];
 
   public readonly db: WorldDatabase;
@@ -56,6 +55,10 @@ class World {
     this.db.close();
   }
 
+  resetProgress() {
+    this.updateData(getDefaultData());
+  }
+
   getSchema(): WorldSchema {
     return {
       id: this.id,
@@ -70,13 +73,8 @@ class World {
 
     if (!chunkData) {
       return Generator.generateChunk(this.simplex, x, y, size, biomes);
-      //chunkData = Generator.generateChunk(this.simplex, x, y, size, biomes);
-      //setTimeout(() => this.db.saveForegroundLayer(x, y, zlib.gzipSync(chunkData as Buffer, compressionOptions)));
     } else {
       const background = Generator.generateChunk(this.simplex, x, y, size, biomes, true);
-      //const sizes = Buffer.from(new Uint32Array([background.length, chunkData.length]).buffer);
-      //const filler = Buffer.alloc(4 - ((STAMP.length + /*sizes.length + */background.length + chunkData.length) % 4));
-      //return Buffer.concat([STAMP, sizes, background, chunkData, filler]);
       return Buffer.concat([STAMP, background, chunkData]);
     }
   }
@@ -85,7 +83,7 @@ class World {
     this.db.saveLayers(data);
   }
 
-  updateData(data: WorldSchema) {
+  updateData(data: WorldSchema['data']) {
     Object.assign(this.data, data);
 
     updateWorldsList(worlds);

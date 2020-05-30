@@ -40,14 +40,19 @@
   cursor: pointer;
 }
 
-.worlds .worlds-list > *:not(.selected):hover {
+.worlds .worlds-list > *:not(.selected):not(.disabled):hover {
   background-color: var(--main-color-light);
+}
+
+.worlds .worlds-list > *.over {
+  border-color: var(--main-color-darker);
+  color: #ffcdd2;
 }
 
 .worlds .worlds-list > *.selected {
   box-shadow: var(--shadow-small-reversed);
   background-color: var(--main-color-light);
-  border-color: var(--selected-color);
+  border-color: var(--selected-color) !important;
 }
 
 .worlds .worlds-list > *:not(:last-child) {

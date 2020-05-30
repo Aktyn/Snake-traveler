@@ -107,6 +107,10 @@ const API = {
     return request(`/worlds/${worldId}`, METHOD.DELETE).then(res => res.text());
   },
 
+  resetWorld(worldId: string) {
+    return request(`/worlds/${worldId}/reset`, METHOD.POST).then(res => res.json());
+  },
+
   generateWorld(name: string, seed: string) {
     return request(`/worlds`, METHOD.POST, {
       body: JSON.stringify({ name, seed }),

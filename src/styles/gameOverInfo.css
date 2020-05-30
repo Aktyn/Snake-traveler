@@ -1,0 +1,36 @@
+.game-over > header {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  display: grid;
+  align-items: center;
+  justify-content: stretch;
+  grid-template-columns: 1fr auto 1fr;
+  column-gap: 16px;
+}
+
+.game-over > header::before, .game-over > header::after {
+  content: "";
+  display: block;
+  height: 1px;
+  background-color: #fff4;
+}
+
+.game-over > .stats {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.game-over > .stats > *:nth-child(odd) {
+  justify-self: end;
+}
+
+.game-over > .stats > *:nth-child(even) {
+  justify-self: start;
+}
+
+.game-over > .game-over-options {
+  margin-top: 20px;
+}
