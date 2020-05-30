@@ -153,13 +153,9 @@ export const saveQueue = (() => {
 })();
 
 const prepareCanvas = () => {
-  //if ('OffscreenCanvas' in window) {
-  //  return new OffscreenCanvas(Chunk.RESOLUTION, Chunk.RESOLUTION);
-  //} else {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = Chunk.RESOLUTION;
   return canvas;
-  //}
 };
 
 const prepareContext = (canvas: OffscreenCanvas | HTMLCanvasElement) => {
@@ -368,13 +364,9 @@ export default class Chunk extends Vec2 {
               (mix(Biomes[biomeF].foreground.buffer[c], Biomes[nextBiomeF].foreground.buffer[c], mixFactorF) * 255) | 0;
           }
         }
-
-        //this.backgroundImgData.data[i * 4 + 3] = 255; //this.data[i] < 0 ? 255 : 0; //this.data[i] & 0x80 ? 255 : 0; //255;
-        //this.foregroundImgData.data[i * 4 + 3] = this.data[i + foregroundOffset] & 0x80 ? 255 : 0;
       }
 
       this.updateCanvases();
-      //saveQueue.registerChunk({ chunk: this, saveBackground: true });
     } else {
       const bgData = new Float32Array(
         this.data.buffer.slice(STAMP.length, STAMP.length + Chunk.RESOLUTION * Chunk.RESOLUTION * 4)

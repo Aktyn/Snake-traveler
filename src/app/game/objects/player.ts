@@ -49,7 +49,6 @@ export default class Player extends DynamicObject implements Updatable {
 
     this.weapon = new DoubleGun(x, y, map);
     this.weapon.color = this.color;
-    //this.weapon.color.alpha = 0.95;
 
     this.entities.addObject(Player.entityName, this);
   }

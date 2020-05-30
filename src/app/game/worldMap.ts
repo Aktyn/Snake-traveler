@@ -20,6 +20,7 @@ import SpikyEnemy from './objects/spikyEnemy';
 import PlayerBullet from './objects/playerBullet';
 import SpikeBullet from './objects/spikeBullet';
 import { AppContextSchema } from '../main/App';
+import Config from '../common/config';
 
 type Class = { new (...args: any[]): any };
 
@@ -125,6 +126,11 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
   get camera() {
     return this.cam;
+  }
+
+  get damageAmplification() {
+    //damage is amplified over time
+    return 1 + (this.context.time / 60) * Config.DAMAGE_AMPLIFICATION_OVER_TIME;
   }
 
   private getRandomChunk() {
@@ -331,8 +337,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
         (object as SpikyEnemy).resetRotation();
       }
       //if object is not a ghost and reacts with walls bouncing from them
-      /*const bounceVector = */ super.bounceOutOfColor(object, this.chunks, this.centerChunkPos);
-      //console.log('Object collided', bounceVector?.x, bounceVector?.y);
+      super.bounceOutOfColor(object, this.chunks, this.centerChunkPos);
     }
   }
 
@@ -369,7 +374,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
         return;
       }
       if (this.isObjectOfInstances(otherObject, [Player, PlayerSegment])) {
-        (otherObject as Player | PlayerSegment).onHit(bullet.params.power);
+        (otherObject as Player | PlayerSegment).onHit(bullet.params.power * this.damageAmplification);
       }
 
       bullet.deleted = true;
@@ -414,8 +419,7 @@ export default class WorldMap extends CollisionDetector implements Updatable {
       enemy.deleted = true;
 
       const playerOrSegment = (enemy === object1 ? object2 : object1) as Player | PlayerSegment;
-      playerOrSegment.onHit(enemy.strength);
-      //TODO: blood effect from the screen edges when enemy hits/bumps on player
+      playerOrSegment.onHit(enemy.strength * this.damageAmplification);
     }
 
     super.bounceDynamicObjects(object1, object2);
