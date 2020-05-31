@@ -39,10 +39,9 @@ export default class SceneRenderer extends RendererBase {
     this.updateShadowVector();
   }
 
-  //TODO: allow user to control shadow angle
-  private updateShadowVector(w = window.innerWidth, h = window.innerHeight) {
+  private updateShadowVector(angle = Math.PI / 4, w = window.innerWidth, h = window.innerHeight) {
     const len = Math.sqrt(w * w + h * h);
-    const normalized = [-h / len, w / len];
+    const normalized = [(-h / len) * Math.cos(angle), (w / len) * Math.sin(angle)];
 
     if (!this.shadowVector) {
       this.shadowVector = new Float32Array(normalized);
@@ -148,6 +147,8 @@ export default class SceneRenderer extends RendererBase {
   }
 
   render(map: WorldMap) {
+    this.updateShadowVector(map.shadowAngle);
+
     this.renderBackgroundPass(map);
     this.renderForegroundPass(map);
 

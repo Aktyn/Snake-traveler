@@ -7,7 +7,7 @@ const POSITION_SPEED = 2;
 const ZOOM_SCALE = 0.1;
 const ZOOM_SPEED = 2;
 const MAX_ZOOM = 1.5;
-const MIN_ZOOM = -2; //TODO: adjust it
+const MIN_ZOOM = -1;
 
 export default class Camera extends Vec2 implements Updatable {
   public readonly buffer = new Float32Array([0, 0, 1]);

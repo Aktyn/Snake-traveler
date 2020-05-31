@@ -1,19 +1,17 @@
 #version 300 es
 precision lowp float;
-//precision lowp sampler2DArray;
 
 in lowp vec2 vUV;
 
-//uniform sampler2DArray map_pass;
-//uniform sampler2D scene_pass;
 uniform sampler2D foreground_pass;
 uniform sampler2D background_pass;
 
 uniform vec3 camera;
 
 uniform vec2 offset;//normalized flipped resolution
+uniform float aspect;
 
-#define SHADOW_TRANSPARENCY 0.15//0.15
+#define SHADOW_TRANSPARENCY 0.15
 #define SAMPLES 20
 #define SAMPLESf 20.0
 #define PARALAX_VALUE 1.5
@@ -21,23 +19,18 @@ uniform vec2 offset;//normalized flipped resolution
 out vec4 color;
 
 vec4 combined(in vec2 uv) {
-    //vec4 foreground = texture2D(scene_pass, uv);
-    //return mix(texture2D(foreground_pass, uv), foreground, foreground.a);
-    //return texture(map_pass, vec3(uv, 1));
     return texture(foreground_pass, uv);
 }
 
 void main() {
-    //color = texture(map_pass, vec3(vUV, float(1)));
-
-    vec4 scene = combined(vUV);//texture2D(scene_pass, vUV);
+    vec4 scene = combined(vUV);
 
     if(scene.a == 1.0) {//optimization
         color = scene;
         return;
     }
 
-    vec2 paralax = 0.01 * camera.z * offset * //0.01 - as 0.1*0.1
+    vec2 paralax = 0.01 * camera.z * vec2(-1.0/aspect, 1.0) * //0.01 - as 0.1*0.1
         vec2(-(vUV.x * 2.0 - 1.0), vUV.y * 2.0 - 1.0) * PARALAX_VALUE;
 
     float shadow = 0.;//LONG SHADOWS

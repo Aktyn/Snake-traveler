@@ -25,7 +25,6 @@ export default class Core {
 
   private enemySpawnerTimer = this.gameConfig.firstEnemySpawnerDelay;
 
-  private readonly wheelListener = this.onWheel.bind(this);
   private readonly keyDownListener = this.onKeyDown.bind(this);
   private readonly keyUpListener = this.onKeyUp.bind(this);
   private readonly mouseDownListener = this.onMouseDown.bind(this);
@@ -38,11 +37,10 @@ export default class Core {
   }
 
   private initControls() {
-    window.addEventListener('mousewheel', this.wheelListener);
     window.addEventListener('keydown', this.keyDownListener);
     window.addEventListener('keyup', this.keyUpListener);
 
-    window.addEventListener('mousedown', this.mouseDownListener); //TODO: assign to renderer canvas
+    window.addEventListener('mousedown', this.mouseDownListener);
     window.addEventListener('mouseup', this.mouseUpListener);
     window.addEventListener('mousemove', this.mouseMoveListener);
 
@@ -51,7 +49,6 @@ export default class Core {
   }
 
   private unloadControls() {
-    window.removeEventListener('mousewheel', this.wheelListener);
     window.removeEventListener('keydown', this.keyDownListener);
     window.removeEventListener('keyup', this.keyUpListener);
 
@@ -61,10 +58,6 @@ export default class Core {
 
     window.removeEventListener('mousewheel', this.mouseWheelListener);
     window.removeEventListener('DOMMouseScroll', this.mouseWheelListener);
-  }
-
-  private onWheel(event: Event) {
-    this.map?.zoom((event as MouseWheelEvent).deltaY / 53);
   }
 
   private onKeyDown(event: KeyboardEvent) {
@@ -125,6 +118,8 @@ export default class Core {
   }
 
   private onMouseWheel(event: Event) {
+    this.map?.zoom((event as MouseWheelEvent).deltaY / 53);
+
     const e = window.event || event;
     //@ts-ignore
     const delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail));

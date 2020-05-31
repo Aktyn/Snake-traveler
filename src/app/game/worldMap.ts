@@ -25,6 +25,7 @@ import Config from '../common/config';
 type Class = { new (...args: any[]): any };
 
 const WORLD_DATA_UPDATE_FREQUENCY = 5; //seconds
+const SHADOW_ROTATION_SPEED = 0.01;
 
 interface ChunkToSave {
   chunk: Chunk;
@@ -57,6 +58,8 @@ export default class WorldMap extends CollisionDetector implements Updatable {
 
   private objects: Updatable[] = [];
   private dynamicObjects: DynamicObject[] = [];
+
+  public shadowAngle = Math.PI / 4;
 
   constructor(world: WorldSchema, context: AppContextSchema, onLoad: (map: WorldMap) => void) {
     super();
@@ -480,6 +483,11 @@ export default class WorldMap extends CollisionDetector implements Updatable {
   update(delta: number) {
     const freezePhysics = !this.areNearbyChunksLoaded();
     if (!freezePhysics) {
+      this.shadowAngle += Math.PI * delta * SHADOW_ROTATION_SPEED;
+      while (this.shadowAngle > Math.PI) {
+        this.shadowAngle -= Math.PI * 2;
+      }
+
       for (let i = 0; i < this.objects.length; i++) {
         if (((this.objects[i] as unknown) as ObjectBase).deleted) {
           this.removeObject(this.objects[i], i);

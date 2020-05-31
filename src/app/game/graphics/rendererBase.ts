@@ -45,12 +45,16 @@ export default class RendererBase {
 
   destroy() {}
 
+  getCanvas() {
+    return this.CANVAS;
+  }
+
   protected resize(w = window.innerWidth, h = window.innerHeight) {
     this.aspect = w / h;
 
     this.CANVAS.width = w;
     this.CANVAS.height = h;
-    this.GL = loadContext(this.CANVAS); //TODO: optimize by not reloading context every time
+    this.GL = loadContext(this.CANVAS);
 
     for (const fb of this.framebufferModule.getFullscreenFramebuffers()) {
       fb.updateTextureResolution(w, h);

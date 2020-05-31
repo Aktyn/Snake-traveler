@@ -12,7 +12,7 @@ const normalizedNoisesSum = (simplex: SimplexNoise, x: number, y: number, noises
 };
 
 const Generator = {
-  /** params should be integers */ //TODO: this function takes about 30ms, it can be optimized by running multiple threads
+  /** params should be integers */
   generateChunk: (
     simplex: SimplexNoise,
     x: number,

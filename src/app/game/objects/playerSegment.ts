@@ -30,7 +30,7 @@ export default class PlayerSegment extends DynamicObject implements Updatable {
     this.index = index;
     this.map = map;
 
-    this.entities.addObject(PlayerSegment.entityName, this); //TODO: use static value from Player class
+    this.entities.addObject(PlayerSegment.entityName, this);
   }
 
   destroy() {

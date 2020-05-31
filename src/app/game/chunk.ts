@@ -424,7 +424,7 @@ export default class Chunk extends Vec2 {
 
   updateTexture() {
     if (this.updateFlags.needForegroundImageDataUpdate) {
-      this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION); //TODO: optimize because it takes about 2 ms
+      this.foregroundImgData = this.context.foreground.getImageData(0, 0, Chunk.RESOLUTION, Chunk.RESOLUTION);
       this.updateFlags.needForegroundImageDataUpdate = false;
 
       saveQueue.registerChunk(this);
